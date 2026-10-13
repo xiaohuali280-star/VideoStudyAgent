@@ -20,7 +20,7 @@ def parse_subtitles(path: Path, language: str, max_duration_ms: int) -> Transcri
                     raise ValueError("invalid timing")
                 for stamp in stamps:
                     parts = stamp.replace(",", ".").split(":")
-                    if float(parts[-1]) >= 60 or (len(parts) == 3 and int(parts[-2]) >= 60):
+                    if float(parts[-1]) >= 60 or int(parts[-2]) >= 60:
                         raise ValueError("invalid timestamp range")
         if path.suffix.lower() == ".srt":
             cues = [
@@ -38,6 +38,15 @@ def parse_subtitles(path: Path, language: str, max_duration_ms: int) -> Transcri
             ]
         if not cues:
             raise StudyError("EMPTY_TRANSCRIPT", "字幕没有可用内容。", 422)
+        if path.suffix.lower() == ".vtt":
+            cue_blocks = [
+                block
+                for block in re.split(r"\n\s*\n", text)
+                if not re.match(r"^(NOTE(?:\s|$)|STYLE(?:\s|$)|REGION(?:\s|$))", block)
+            ]
+            expected = sum("-->" in line for block in cue_blocks for line in block.splitlines())
+            if expected != len(cues):
+                raise ValueError("VTT parser silently dropped a cue")
         # Preserve fractional VTT milliseconds (some library versions expose whole seconds).
         if path.suffix.lower() == ".vtt":
 

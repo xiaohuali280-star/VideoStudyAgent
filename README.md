@@ -1,17 +1,14 @@
 # VideoStudyAgent
 
-阶段 6 已完成：课程上传与历史、任务进度、笔记/自测/字幕浏览、视频时间跳转及五种导出。177 项后端、13 项前端、2 项浏览器测试通过；真实 DeepSeek 验收延后。最新记录见 [阶段 6](videostudyagent/docs/STAGE_6_REPORT.md)。
+课程视频智能学习系统。上传本地 MP4 或 SRT/VTT，生成带来源时间的结构化笔记、自测题、答案与解析，在 Web 页面阅读并导出。
 
-课程视频智能学习系统：计划支持本地视频/字幕导入、带时间戳转写、结构化笔记、自测题及结果导出。
+阶段 1–7 的实现和离线验收已完成。真实 FFmpeg/Whisper 与实际 API/Worker/本地 HTTP 模型协议联调已通过；**真实 DeepSeek 生成质量与费用验收按用户要求延后**。
 
-当前完成阶段 1–5 的离线验证：上传/持久化、字幕/媒体/ASR、结构化生成、单 Agent Tool Calling 与独立 Worker。真实 ASR 和进程机制已验证；deepseek-flash 的真实 LLM 验收按用户要求延后，页面闭环在阶段 6 接入。
+- [安装、配置、启动及测试](videostudyagent/README.md)
+- [架构、数据契约与阶段计划](PLAN.md)
+- [阶段 6 验收](videostudyagent/docs/STAGE_6_REPORT.md) / [阶段 7 验收](videostudyagent/docs/STAGE_7_REPORT.md)
+- [开源复用来源](videostudyagent/docs/UPSTREAM_SOURCES.md) / [许可证与通知](videostudyagent/THIRD_PARTY_NOTICES.md)
 
-- [本地安装、启动与测试](videostudyagent/README.md)
-- [架构与分阶段计划](PLAN.md)
-- [开发约束](videostudyagent/AGENTS.md)
-- [阶段 1 验收记录](videostudyagent/docs/STAGE_1_REPORT.md)
-- [五个 GitHub 项目的复用调研](videostudyagent/docs/REUSE_RESEARCH.md)
+React + FastAPI + SQLite + 独立单 Worker；单 Agent 原生 Tool Calling。没有多 Agent、OCR、RAG、认证或自动评分。仅供本机使用，未部署。
 
-源码在 `videostudyagent/backend/` 和 `videostudyagent/frontend/`。后端 167 项测试通过，前端已验证 7 项测试；类型检查与生产构建通过。基础服务不需要密钥，ASR 需显式准备本地模型，真实生成需配置服务端 Key。Worker 在 backend 中单独运行 `python -m app.worker`。
-
-本地 `.env`、用户资料、缓存、模型、虚拟环境、依赖和构建产物不纳入版本控制。BiliNote 转写适配已纳入并保留许可及来源记录，其余候选按阶段评估。
+源码在 videostudyagent/backend 和 videostudyagent/frontend。密钥、上传内容、数据库、缓存、模型、依赖和构建产物均排除在 Git 之外。

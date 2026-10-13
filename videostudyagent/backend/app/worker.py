@@ -12,6 +12,7 @@ from app.core.config import Settings
 from app.core.locking import native_lock
 from app.db.repository import TaskRepository, initialize_database
 from app.schemas.common import ErrorInfo
+from app.services.cleanup import cleanup_temporary
 
 
 def kill_attempt(process):
@@ -132,6 +133,7 @@ def main():
             repository = TaskRepository(initialize_database(settings.data_dir / "app.db"))
             try:
                 repository.recover_interrupted()
+                cleanup_temporary(settings, repository)
                 worker = Worker(settings, repository)
                 while True:
                     processed = worker.run_once()

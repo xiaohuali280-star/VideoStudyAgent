@@ -98,6 +98,8 @@ class ResultService:
                 validate_notes(values["notes"], values["transcript"])
             if "quiz" in values:
                 validate_quiz(values["quiz"], values["transcript"], values["notes"], task.options)
+            if task.status == "succeeded" and set(values) != {"transcript", "notes", "quiz"}:
+                raise ValueError("Completed task has missing artifacts")
         except (ValueError, KeyError) as exc:
             raise StudyError(
                 "STORAGE_ERROR", "学习结果未通过校验，可重新处理。", 409, True

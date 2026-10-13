@@ -1,0 +1,57 @@
+{
+  "cloud_llm_calls": 0,
+  "real_asr": true,
+  "tasks": [
+    {
+      "mode": "video",
+      "question_count": 5,
+      "difficulty": "medium",
+      "source": "asr",
+      "duration_ms": 34000,
+      "segments": 7,
+      "exports": 5,
+      "api_restart": true,
+      "cache_hits": 0
+    },
+    {
+      "mode": "vtt",
+      "question_count": 1,
+      "difficulty": "easy",
+      "source": "subtitle",
+      "duration_ms": 2500,
+      "segments": 1,
+      "exports": 5,
+      "api_restart": true,
+      "cache_hits": 0
+    },
+    {
+      "mode": "both",
+      "question_count": 5,
+      "difficulty": "medium",
+      "source": "subtitle",
+      "duration_ms": 2500,
+      "segments": 1,
+      "exports": 5,
+      "api_restart": true,
+      "cache_hits": 1
+    },
+    {
+      "mode": "vtt_cached",
+      "question_count": 1,
+      "difficulty": "easy",
+      "source": "subtitle",
+      "duration_ms": 2500,
+      "segments": 1,
+      "exports": 5,
+      "api_restart": true,
+      "cache_hits": 3
+    }
+  ],
+  "http_model": {
+    "requests": 22,
+    "generation_requests": 5
+  },
+  "model_fixture": "loopback HTTP scripted test only; no cloud model quality validation",
+  "media": "self-generated 34-second English speech MP4",
+  "asr_model_revision": "d90ca5fe260221311c53c58e660288d3deb8d356"
+}

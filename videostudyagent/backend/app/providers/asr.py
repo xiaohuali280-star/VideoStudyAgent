@@ -55,7 +55,10 @@ class LocalWhisper:
     def transcribe(self, path: Path, language: str | None = None) -> Transcript:
         try:
             raw, info = self.model.transcribe(
-                str(path), language=language, vad_filter=True, beam_size=5
+                str(path),
+                language=language.split("-")[0].lower() if language else None,
+                vad_filter=True,
+                beam_size=5,
             )
             segments = [
                 TranscriptSegment(

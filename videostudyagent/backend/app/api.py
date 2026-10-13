@@ -56,6 +56,8 @@ async def create_task(request: Request):
     try:
         form = await request.form(max_files=2, max_fields=2)
     except HTTPException as exc:
+        if getattr(request.state, "upload_too_large", False):
+            raise StudyError("UPLOAD_TOO_LARGE", "上传内容超过大小限制。", 413) from exc
         raise StudyError("INVALID_UPLOAD", "上传表单无效或字段过多。", 422) from exc
     files, fields = {}, {}
     for key, value in form.multi_items():

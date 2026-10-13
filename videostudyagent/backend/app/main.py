@@ -12,6 +12,7 @@ from app import __version__
 from app.api import router
 from app.core.config import Settings
 from app.core.errors import StudyError
+from app.core.upload_limit import UploadLimitMiddleware
 from app.schemas.common import ErrorInfo, ErrorResponse, ExportFormat, HealthResponse, PublicConfig
 from app.schemas.providers import ModelReply, ModelRequest, ToolCall, ToolDefinition
 from app.schemas.study import NotesDocument, QuizDocument, StudyOptions, Transcript, TranscriptChunk
@@ -71,23 +72,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["Content-Type"],
     )
 
-    @application.middleware("http")
-    async def limit_request_body(request: Request, call_next):
-        if request.method == "POST" and request.url.path == "/api/tasks":
-            limit = settings.max_video_bytes + settings.max_subtitle_bytes + 65536
-            received = 0
-            original = request.receive
-
-            async def limited_receive():
-                nonlocal received
-                message = await original()
-                received += len(message.get("body", b""))
-                if received > limit:
-                    raise StudyError("UPLOAD_TOO_LARGE", "上传内容超过大小限制。", 413)
-                return message
-
-            request._receive = limited_receive
-        return await call_next(request)
+    application.add_middleware(
+        UploadLimitMiddleware,
+        max_bytes=settings.max_video_bytes + settings.max_subtitle_bytes + 65536,
+    )
 
     @application.exception_handler(StudyError)
     async def study_error(_: Request, exc: StudyError) -> JSONResponse:
