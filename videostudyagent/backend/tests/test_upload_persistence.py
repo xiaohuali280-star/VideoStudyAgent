@@ -15,14 +15,6 @@ SRT = b"1\n00:00:00,000 --> 00:00:02,000\nLearning rate controls step size.\n"
 MP4 = b"\x00\x00\x00\x18ftypmp42" + b"\0" * 20
 
 
-@pytest.fixture
-def application(tmp_path):
-    app = create_app(Settings(_env_file=None, data_dir=tmp_path / "data"))
-    yield app
-    if hasattr(app.state, "repository"):
-        app.state.repository.engine.dispose()
-
-
 def upload(app, files=None, **kwargs):
     if files is None:
         files = {"subtitle": ("lesson.srt", SRT)}

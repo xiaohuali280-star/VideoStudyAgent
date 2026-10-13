@@ -162,7 +162,7 @@ export interface components {
             version: string;
             /**
              * Stage
-             * @default 2
+             * @default 3
              */
             stage: number;
         };

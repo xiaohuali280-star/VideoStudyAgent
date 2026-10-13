@@ -11,7 +11,12 @@ dependencies = [
   "alembic>=1.14,<2",
   "uvicorn>=0.34,<1",
   "python-multipart>=0.0.20,<1",
+  "srt>=3.5,<4",
+  "webvtt-py>=0.5,<1",
 ]
+
+[project.optional-dependencies]
+asr = ["faster-whisper>=1.2.1,<2", "av>=11,<19"]
 
 [dependency-groups]
 dev = ["pytest>=8.3,<10", "httpx>=0.28,<1", "ruff>=0.11,<1"]

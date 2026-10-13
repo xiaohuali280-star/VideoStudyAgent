@@ -3,6 +3,17 @@ import socket
 
 import pytest
 
+from app.core.config import Settings
+from app.main import create_app
+
+
+@pytest.fixture
+def application(tmp_path):
+    app = create_app(Settings(_env_file=None, data_dir=tmp_path / "data"))
+    yield app
+    if hasattr(app.state, "repository"):
+        app.state.repository.engine.dispose()
+
 
 @pytest.fixture(autouse=True)
 def isolated_offline_environment(monkeypatch):

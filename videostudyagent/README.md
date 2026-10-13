@@ -98,6 +98,8 @@ npm.cmd run generate:types
 
 ## 开源复用与后续阶段
 
+阶段 3 已实现字幕与本地转写工具，来源及实测见 [阶段 3 验收](docs/STAGE_3_REPORT.md)。安装 ASR 使用 `uv sync --locked --extra asr --python 3.12`（项目内 uv 也可）；FFmpeg/FFprobe 需在 PATH 或通过 VSA_FFMPEG_BINARY / VSA_FFPROBE_BINARY 指定。显式准备默认模型：在 backend 运行 `python -m app.prepare_model small`；短音频测试可选 tiny，并设置 VSA_ASR_MODEL=tiny。运行时不隐式下载或删除模型。生成与 Worker 仍待后续阶段接入。
+
 复用来源和限制见 [REUSE_RESEARCH.md](docs/REUSE_RESEARCH.md)，决策状态见 [REUSE_DECISIONS.md](docs/REUSE_DECISIONS.md)。BiliNote、DeepTutor 等目前是固定版本的候选，没有上游业务源码纳入。正式采用时再补文件哈希、许可证、通知、适配差异和测试，不安装整个上游系统。
 
 Worker 锁在阶段 5 使用 filelock 的原生平台锁：Windows 采用 WindowsFileLock，Unix 采用 UnixFileLock，非阻塞获取、全程持有，不静默退回 SoftFileLock。依据 [filelock 官方说明](https://py-filelock.readthedocs.io/en/latest/)，原生系统锁在进程退出时释放，适合单 Worker 限制。阶段 1 仅完成选型；尚未安装该依赖或验证实际 Worker 互斥，阶段 5 必须补双进程/崩溃恢复测试。

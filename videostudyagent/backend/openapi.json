@@ -373,7 +373,7 @@
             "maximum": 7.0,
             "minimum": 1.0,
             "title": "Stage",
-            "default": 2
+            "default": 3
           }
         },
         "additionalProperties": false,

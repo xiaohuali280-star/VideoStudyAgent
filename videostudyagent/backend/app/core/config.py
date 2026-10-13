@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     asr_model: str = "small"
     asr_device: Literal["cpu", "cuda"] = "cpu"
     asr_compute_type: Literal["int8", "float16", "int8_float16"] = "int8"
+    asr_model_path: Path | None = None
+    asr_cpu_threads: int = Field(default=4, ge=1, le=32)
+    asr_timeout: int = Field(default=900, gt=0)
+    media_probe_timeout: int = Field(default=15, gt=0)
+    media_extract_timeout: int = Field(default=300, gt=0)
+    ffmpeg_binary: str = "ffmpeg"
+    ffprobe_binary: str = "ffprobe"
+    subtitle_tolerance_ms: int = Field(default=1500, ge=0)
     max_video_bytes: int = Field(default=500 * 1024 * 1024, gt=0)
     max_subtitle_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
     max_duration_ms: int = Field(default=120 * 60 * 1000, gt=0)

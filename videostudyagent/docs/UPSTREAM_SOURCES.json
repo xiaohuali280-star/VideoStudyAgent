@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "adoptions": [
+    {
+      "id": "B2",
+      "status": "adopted",
+      "repository": "JefferyHcool/BiliNote",
+      "commit": "90940fde4d224d0f69ad99674f4af0a1ea52d3c4",
+      "license": "MIT",
+      "sources": [
+        {
+          "path": "backend/app/transcriber/whisper.py",
+          "git_blob_sha": "3d254a269e6364bd0b5df8112c2543f63fbf5a7d",
+          "sha256": "bba7745d318d1d87dd3381236a2ab40dc7e20a9f9fdc3bfdbd0f6abdca2a97d6"
+        },
+        {
+          "path": "backend/tests/test_whisper_config_forwarding.py",
+          "git_blob_sha": "2887541c2e4a7d186561434b659858a374b9d4cd",
+          "sha256": "94550ba2a1d93e02e49b3b2efe0f3741b01e6bb46da28a0b813ff024ab1256bf"
+        }
+      ],
+      "local_files": [
+        {
+          "path": "backend/app/providers/asr.py",
+          "sha256": "b607f974ee7614af5eef582eb3157c7d6284825b57ebbb7e38ab2f0500dad1b4"
+        },
+        {
+          "path": "backend/tests/test_transcription.py",
+          "sha256": "b7cdc579009750e55c767a9f2bffc1040f5cad78fba49b38a4d0bbbc38bb08cb"
+        }
+      ],
+      "changes": "Configured local-only model construction and segment mapping adapted; removed events, deletion, download and swallowed errors; forwarded CPU threads; child timeout; migrated configuration-forwarding assertions.",
+      "tests": [
+        "test_b2_forwards_configuration_and_preserves_timestamps",
+        "test_no_speech_and_asr_exceptions_propagate",
+        "test_asr_child_timeout_is_controlled",
+        "real tiny CPU int8 smoke"
+      ]
+    }
+  ]
+}
