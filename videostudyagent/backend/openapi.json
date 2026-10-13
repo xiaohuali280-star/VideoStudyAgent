@@ -2,10 +2,203 @@
   "openapi": "3.1.0",
   "info": {
     "title": "VideoStudyAgent",
-    "description": "Stage 1: health and versioned contracts. Study actions are not enabled.",
+    "description": "Local course study API. Upload and task persistence are available.",
     "version": "0.1.0"
   },
   "paths": {
+    "/api/tasks": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create Task",
+        "operationId": "create_task_api_tasks_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "video": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "subtitle": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "options": {
+                    "type": "string",
+                    "description": "JSON StudyOptions"
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Tasks",
+        "operationId": "list_tasks_api_tasks_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  },
+                  "title": "Response List Tasks Api Tasks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Task Detail",
+        "operationId": "task_detail_api_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/retry": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Retry Task",
+        "operationId": "retry_task_api_tasks__task_id__retry_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -37,6 +230,50 @@
   },
   "components": {
     "schemas": {
+      "ArtifactSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "audio",
+              "transcript",
+              "notes",
+              "quiz"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "kind",
+          "created_at"
+        ],
+        "title": "ArtifactSummary",
+        "type": "object"
+      },
       "ErrorInfo": {
         "additionalProperties": false,
         "properties": {
@@ -94,6 +331,19 @@
         ],
         "title": "ErrorResponse"
       },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
       "HealthResponse": {
         "properties": {
           "schema_version": {
@@ -120,9 +370,10 @@
           },
           "stage": {
             "type": "integer",
-            "const": 1,
+            "maximum": 7.0,
+            "minimum": 1.0,
             "title": "Stage",
-            "default": 1
+            "default": 2
           }
         },
         "additionalProperties": false,
@@ -180,6 +431,310 @@
         },
         "title": "StudyOptions",
         "type": "object"
+      },
+      "Task": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/StudyOptions"
+          },
+          "status": {
+            "default": "queued",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "current_step": {
+            "anyOf": [
+              {
+                "enum": [
+                  "load_subtitles",
+                  "extract_audio",
+                  "transcribe_audio",
+                  "generate_notes",
+                  "generate_quiz"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Current Step"
+          },
+          "attempt": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Finished At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "options",
+          "created_at"
+        ],
+        "title": "Task",
+        "type": "object"
+      },
+      "TaskDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/Task"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TaskStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "available_artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactSummary"
+            },
+            "title": "Available Artifacts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "TaskDetail",
+        "type": "object"
+      },
+      "TaskStep": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "attempt": {
+            "exclusiveMinimum": 0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "tool_name": {
+            "enum": [
+              "load_subtitles",
+              "extract_audio",
+              "transcribe_audio",
+              "generate_notes",
+              "generate_quiz"
+            ],
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "status": {
+            "default": "pending",
+            "enum": [
+              "pending",
+              "running",
+              "succeeded",
+              "failed",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "cache_key": {
+            "anyOf": [
+              {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cache Key"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifact Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Finished At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "attempt",
+          "tool_name"
+        ],
+        "title": "TaskStep",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       },
       "TranscriptSegment": {
         "additionalProperties": false,
@@ -580,314 +1135,6 @@
           "questions"
         ],
         "title": "QuizDocument",
-        "type": "object"
-      },
-      "Task": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.0",
-            "default": "1.0",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "title": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Title",
-            "type": "string"
-          },
-          "options": {
-            "$ref": "#/components/schemas/StudyOptions"
-          },
-          "status": {
-            "default": "queued",
-            "enum": [
-              "queued",
-              "running",
-              "succeeded",
-              "failed"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "current_step": {
-            "anyOf": [
-              {
-                "enum": [
-                  "load_subtitles",
-                  "extract_audio",
-                  "transcribe_audio",
-                  "generate_notes",
-                  "generate_quiz"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Current Step"
-          },
-          "attempt": {
-            "default": 1,
-            "exclusiveMinimum": 0,
-            "title": "Attempt",
-            "type": "integer"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "started_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Started At"
-          },
-          "finished_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Finished At"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ErrorInfo"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "options",
-          "created_at"
-        ],
-        "title": "Task",
-        "type": "object"
-      },
-      "ArtifactSummary": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.0",
-            "default": "1.0",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "task_id": {
-            "format": "uuid",
-            "title": "Task Id",
-            "type": "string"
-          },
-          "kind": {
-            "enum": [
-              "audio",
-              "transcript",
-              "notes",
-              "quiz"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "task_id",
-          "kind",
-          "created_at"
-        ],
-        "title": "ArtifactSummary",
-        "type": "object"
-      },
-      "TaskStep": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.0",
-            "default": "1.0",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "task_id": {
-            "format": "uuid",
-            "title": "Task Id",
-            "type": "string"
-          },
-          "attempt": {
-            "exclusiveMinimum": 0,
-            "title": "Attempt",
-            "type": "integer"
-          },
-          "tool_name": {
-            "enum": [
-              "load_subtitles",
-              "extract_audio",
-              "transcribe_audio",
-              "generate_notes",
-              "generate_quiz"
-            ],
-            "title": "Tool Name",
-            "type": "string"
-          },
-          "status": {
-            "default": "pending",
-            "enum": [
-              "pending",
-              "running",
-              "succeeded",
-              "failed",
-              "skipped"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "cache_key": {
-            "anyOf": [
-              {
-                "pattern": "^[a-f0-9]{64}$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Cache Key"
-          },
-          "artifact_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Artifact Id"
-          },
-          "started_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Started At"
-          },
-          "finished_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Finished At"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ErrorInfo"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null
-          }
-        },
-        "required": [
-          "id",
-          "task_id",
-          "attempt",
-          "tool_name"
-        ],
-        "title": "TaskStep",
-        "type": "object"
-      },
-      "TaskDetail": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.0",
-            "default": "1.0",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "task": {
-            "$ref": "#/components/schemas/Task"
-          },
-          "steps": {
-            "items": {
-              "$ref": "#/components/schemas/TaskStep"
-            },
-            "title": "Steps",
-            "type": "array"
-          },
-          "available_artifacts": {
-            "items": {
-              "$ref": "#/components/schemas/ArtifactSummary"
-            },
-            "title": "Available Artifacts",
-            "type": "array"
-          }
-        },
-        "required": [
-          "task"
-        ],
-        "title": "TaskDetail",
         "type": "object"
       },
       "StudyResult": {

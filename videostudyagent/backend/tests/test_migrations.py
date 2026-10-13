@@ -14,8 +14,8 @@ def test_baseline_migration_is_repeatable_and_persistent(tmp_path):
     try:
         with engine.begin() as connection:
             config.attributes["connection"] = connection
-            command.upgrade(config, "head")
-            command.upgrade(config, "head")
+            command.upgrade(config, "0001_baseline")
+            command.upgrade(config, "0001_baseline")
             assert inspect(connection).get_table_names() == ["alembic_version"]
             assert connection.execute(text("PRAGMA foreign_keys")).scalar() == 1
             assert connection.execute(text("PRAGMA journal_mode")).scalar() == "wal"
@@ -32,6 +32,18 @@ def test_baseline_migration_is_repeatable_and_persistent(tmp_path):
             )
         with reopened.begin() as connection:
             config.attributes["connection"] = connection
+            command.upgrade(config, "head")
+            command.upgrade(config, "head")
+            assert set(inspect(connection).get_table_names()) == {
+                "alembic_version",
+                "tasks",
+                "assets",
+                "task_steps",
+                "artifacts",
+                "cache_entries",
+            }
+            command.downgrade(config, "0001_baseline")
+            assert inspect(connection).get_table_names() == ["alembic_version"]
             command.downgrade(config, "base")
             assert connection.execute(text("SELECT COUNT(*) FROM alembic_version")).scalar() == 0
     finally:

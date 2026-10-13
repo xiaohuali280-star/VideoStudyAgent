@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +8,9 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
 from app import __version__
+from app.api import router
 from app.core.config import Settings
+from app.core.errors import StudyError
 from app.schemas.common import ErrorInfo, ErrorResponse, HealthResponse
 from app.schemas.providers import ModelReply, ModelRequest, ToolCall, ToolDefinition
 from app.schemas.study import NotesDocument, QuizDocument, StudyOptions, Transcript, TranscriptChunk
@@ -44,17 +48,57 @@ DOMAIN_CONTRACTS = (
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings if settings is not None else Settings()
+
+    @asynccontextmanager
+    async def lifespan(app):
+        yield
+        if hasattr(app.state, "repository"):
+            app.state.repository.engine.dispose()
+
     application = FastAPI(
         title="VideoStudyAgent",
         version=__version__,
-        description="Stage 1: health and versioned contracts. Study actions are not enabled.",
+        description="Local course study API. Upload and task persistence are available.",
+        lifespan=lifespan,
     )
+    application.state.settings = settings
+    application.include_router(router)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_methods=["GET"],
+        allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
+
+    @application.middleware("http")
+    async def limit_request_body(request: Request, call_next):
+        if request.method == "POST" and request.url.path == "/api/tasks":
+            limit = settings.max_video_bytes + settings.max_subtitle_bytes + 65536
+            received = 0
+            original = request.receive
+
+            async def limited_receive():
+                nonlocal received
+                message = await original()
+                received += len(message.get("body", b""))
+                if received > limit:
+                    raise StudyError("UPLOAD_TOO_LARGE", "上传内容超过大小限制。", 413)
+                return message
+
+            request._receive = limited_receive
+        return await call_next(request)
+
+    @application.exception_handler(StudyError)
+    async def study_error(_: Request, exc: StudyError) -> JSONResponse:
+        payload = ErrorResponse(
+            error=ErrorInfo(
+                code=exc.code,
+                message=exc.message,
+                retryable=exc.retryable,
+                step=exc.step,
+            )
+        )
+        return JSONResponse(status_code=exc.status, content=payload.model_dump(mode="json"))
 
     @application.get(
         "/api/health",

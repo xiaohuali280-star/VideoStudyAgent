@@ -2,7 +2,7 @@
 
 本地课程视频学习系统。阶段 1 已完成：基础工作台、FastAPI 健康接口、版本化数据契约、SQLite 迁移骨架、离线测试替身和开源候选登记。
 
-当前唯一业务 API 是 `GET /api/health`。上传、字幕解析、转写、笔记、自测、任务执行和导出按后续阶段实现；页面会明确说明功能尚未开放。阶段进度见 [PLAN.md](../PLAN.md)，本次验收见 [STAGE_1_REPORT.md](docs/STAGE_1_REPORT.md)。
+阶段 2 已提供上传、任务列表/详情及重试 API，首次业务访问会迁移 SQLite。页面仍是基础工作台，字幕解析、转写、生成、Worker 与导出在后续阶段开放。阶段进度见 [PLAN.md](../PLAN.md)，验收见 [阶段 1](docs/STAGE_1_REPORT.md)和[阶段 2](docs/STAGE_2_REPORT.md)。
 
 ## 环境与安装
 
@@ -68,7 +68,7 @@ npm.cmd run build
 
 后端测试隔离 `VSA_` 环境变量，禁止外部网络连接；仅允许 Windows asyncio 运行所需的本机 loopback。前端测试替换 fetch，验证成功、失败和请求取消。FakeLLM 只返回预先注入的响应，FakeASR 只返回注入的 Transcript，不调用模型或读取音频。
 
-迁移测试使用 `.cache/pytest/` 内的临时 SQLite，验证 upgrade、重复 upgrade、重开连接、WAL/外键/超时和 downgrade。当前没有业务表，迁移只建立 Alembic 版本记录；启动 API 不自动运行迁移。pytest 会清理自己的 basetemp，该目录只能放测试临时文件，不可存用户资料。
+迁移测试使用 `.cache/pytest/` 内的临时 SQLite，验证 upgrade、重复 upgrade、重开连接、WAL/外键/超时和 downgrade。阶段 2 建立 tasks/assets/task_steps/artifacts/cache_entries；首次业务访问迁移数据库，health 不迁移。pytest 会清理自己的 basetemp，该目录只能放测试临时文件，不可存用户资料。
 
 修改 Schema 后，先在 `backend/` 导出，再在 `frontend/` 生成类型：
 

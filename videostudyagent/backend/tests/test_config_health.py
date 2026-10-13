@@ -31,9 +31,9 @@ def test_health_needs_no_key_models_or_database(tmp_path):
         "status": "ok",
         "service": "VideoStudyAgent",
         "version": "0.1.0",
-        "stage": 1,
+        "stage": 2,
     }
-    assert request(application, "GET", "/api/tasks").status_code == 404
+    assert request(application, "GET", "/api/not-implemented").status_code == 404
     assert not data_dir.exists()
 
 
@@ -101,7 +101,12 @@ def test_cors_is_limited_to_configured_local_origins():
 
 def test_openapi_snapshot_and_all_component_references():
     schema = create_app(Settings(_env_file=None)).openapi()
-    assert set(schema["paths"]) == {"/api/health"}
+    assert set(schema["paths"]) == {
+        "/api/health",
+        "/api/tasks",
+        "/api/tasks/{task_id}",
+        "/api/tasks/{task_id}/retry",
+    }
     assert "QuizDocument" in schema["components"]["schemas"]
     snapshot = json.loads((Path(__file__).parents[1] / "openapi.json").read_text("utf-8"))
     assert schema == snapshot
