@@ -9,6 +9,7 @@ from sqlalchemy import Engine, delete, insert, select, update
 
 from alembic import command
 from app.core.errors import StudyError
+from app.core.locking import native_lock
 from app.db.models import ArtifactRow, AssetRow, CacheRow, StepRow, TaskRow
 from app.db.session import create_database_engine
 from app.schemas.common import ErrorInfo
@@ -30,9 +31,14 @@ def now():
 def initialize_database(path: Path) -> Engine:
     engine = create_database_engine(path)
     config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
-    with engine.begin() as connection:
-        config.attributes["connection"] = connection
-        command.upgrade(config, "head")
+    try:
+        with native_lock(path.parent / ".schema.lock", timeout=5).acquire():
+            with engine.begin() as connection:
+                config.attributes["connection"] = connection
+                command.upgrade(config, "head")
+    except Exception:
+        engine.dispose()
+        raise StudyError("STORAGE_ERROR", "数据库初始化未完成，请重试。", 503, True) from None
     return engine
 
 
@@ -108,9 +114,13 @@ class TaskRepository:
                 )
                 .order_by(StepRow.attempt, StepRow.id)
             ).all()
+        steps = sorted(
+            [TaskStep.model_validate(row) for row in rows],
+            key=lambda item: (item.attempt, item.sequence or 0, str(item.id)),
+        )
         return TaskDetail(
             task=task,
-            steps=[TaskStep.model_validate(row) for row in rows],
+            steps=steps,
             available_artifacts=[
                 ArtifactSummary.model_validate(
                     item.model_dump(include={"id", "task_id", "kind", "created_at"})
@@ -210,6 +220,8 @@ class TaskRepository:
                     payload=step.model_dump(mode="json"),
                 )
             )
+            if step.tool_name == "unknown":
+                return
             payload = connection.scalar(
                 select(TaskRow.payload).where(
                     TaskRow.id == str(step.task_id),
@@ -259,6 +271,16 @@ class TaskRepository:
     def recover_interrupted(self):
         for task in self.list(100000, 0):
             if task.status == "running":
+                for step in self.detail(task.id).steps:
+                    if step.status == "running":
+                        step.status, step.finished_at = "failed", now()
+                        step.error = ErrorInfo(
+                            code="WORKER_INTERRUPTED",
+                            message="执行进程中断。",
+                            retryable=True,
+                            step=step.tool_name,
+                        )
+                        self.save_step(step)
                 self.finish(
                     task.id,
                     ErrorInfo(

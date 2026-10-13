@@ -373,7 +373,7 @@
             "maximum": 7.0,
             "minimum": 1.0,
             "title": "Stage",
-            "default": 4
+            "default": 5
           }
         },
         "additionalProperties": false,
@@ -601,15 +601,23 @@
             "type": "integer"
           },
           "tool_name": {
-            "enum": [
-              "load_subtitles",
-              "extract_audio",
-              "transcribe_audio",
-              "generate_notes",
-              "generate_quiz"
+            "anyOf": [
+              {
+                "enum": [
+                  "load_subtitles",
+                  "extract_audio",
+                  "transcribe_audio",
+                  "generate_notes",
+                  "generate_quiz"
+                ],
+                "type": "string"
+              },
+              {
+                "const": "unknown",
+                "type": "string"
+              }
             ],
-            "title": "Tool Name",
-            "type": "string"
+            "title": "Tool Name"
           },
           "status": {
             "default": "pending",
@@ -685,6 +693,37 @@
               }
             ],
             "default": null
+          },
+          "sequence": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sequence"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Duration Ms"
+          },
+          "cache_hit": {
+            "default": false,
+            "title": "Cache Hit",
+            "type": "boolean"
           }
         },
         "required": [

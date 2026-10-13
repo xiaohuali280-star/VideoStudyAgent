@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     llm_max_request_bytes: int = Field(default=131072, ge=4096)
     llm_max_requests: int = Field(default=100, ge=1, le=1000)
     llm_total_tokens: int = Field(default=500000, ge=4096)
+    agent_max_tool_calls: int = Field(default=12, ge=1, le=100)
+    agent_max_no_progress: int = Field(default=2, ge=0, le=10)
+    task_timeout: int = Field(default=7200, ge=1)
+    worker_poll_interval: float = Field(default=1, ge=0.1, le=60)
     asr_model: str = "small"
     asr_device: Literal["cpu", "cuda"] = "cpu"
     asr_compute_type: Literal["int8", "float16", "int8_float16"] = "int8"

@@ -2,16 +2,43 @@
 
 import json
 
-from app.schemas.providers import ModelReply
+from app.schemas.providers import ModelReply, ToolCall
 
 
 class ScriptedStudyModel:
     def __init__(self):
         self.requests = []
         self.question_index = 0
+        self.agent_index = 0
 
     async def complete(self, request):
         self.requests.append(request)
+        if request.tools:
+            state = json.loads(request.messages[-1].content)["state"]
+            artifacts = state["artifacts"]
+            if "transcript" not in artifacts:
+                if state["has_subtitle"]:
+                    name, args = "load_subtitles", {}
+                elif "audio" not in artifacts:
+                    name, args = "extract_audio", {}
+                else:
+                    name, args = "transcribe_audio", {"audio_artifact_id": artifacts["audio"]}
+            elif "notes" not in artifacts:
+                name, args = "generate_notes", {"transcript_artifact_id": artifacts["transcript"]}
+            elif "quiz" not in artifacts:
+                name, args = (
+                    "generate_quiz",
+                    {
+                        "transcript_artifact_id": artifacts["transcript"],
+                        "notes_artifact_id": artifacts["notes"],
+                    },
+                )
+            else:
+                return ModelReply(content="done")
+            self.agent_index += 1
+            return ModelReply(
+                tool_calls=[ToolCall(id=f"call_{self.agent_index}", name=name, arguments=args)]
+            )
         payload = json.loads(request.messages[1].content)
         data = payload["course_data"]
         if payload["schema"]["title"] == "NotesDocument":

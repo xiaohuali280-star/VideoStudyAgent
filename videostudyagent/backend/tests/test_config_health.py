@@ -31,7 +31,7 @@ def test_health_needs_no_key_models_or_database(tmp_path):
         "status": "ok",
         "service": "VideoStudyAgent",
         "version": "0.1.0",
-        "stage": 4,
+        "stage": 5,
     }
     assert request(application, "GET", "/api/not-implemented").status_code == 404
     assert not data_dir.exists()

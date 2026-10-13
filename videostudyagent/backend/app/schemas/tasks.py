@@ -93,13 +93,16 @@ class TaskStep(DocumentModel):
     id: UUID
     task_id: UUID
     attempt: PositiveInt
-    tool_name: ToolName
+    tool_name: ToolName | Literal["unknown"]
     status: StepStatus = "pending"
     cache_key: ContentHash | None = None
     artifact_id: UUID | None = None
     started_at: AwareDatetime | None = None
     finished_at: AwareDatetime | None = None
     error: ErrorInfo | None = None
+    sequence: PositiveInt | None = None
+    duration_ms: Milliseconds | None = None
+    cache_hit: bool = False
 
 
 class ToolCallRecord(ContractModel):

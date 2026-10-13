@@ -1,6 +1,6 @@
 # VideoStudyAgent
 
-本地课程视频学习系统。阶段 1 已完成：基础工作台、FastAPI 健康接口、版本化数据契约、SQLite 迁移骨架、离线测试替身和开源候选登记。
+本地课程视频学习系统。阶段 1–5 已完成对应离线验证：上传与持久化、字幕/媒体/ASR、结构化生成工具、单 Agent 和独立 Worker；真实 LLM 验收按用户指示延后。
 
 阶段 2 已提供上传、任务列表/详情及重试 API，首次业务访问会迁移 SQLite。页面仍是基础工作台，字幕解析、转写、生成、Worker 与导出在后续阶段开放。阶段进度见 [PLAN.md](../PLAN.md)，验收见 [阶段 1](docs/STAGE_1_REPORT.md)和[阶段 2](docs/STAGE_2_REPORT.md)。
 
@@ -104,4 +104,6 @@ npm.cmd run generate:types
 
 Worker 锁在阶段 5 使用 filelock 的原生平台锁：Windows 采用 WindowsFileLock，Unix 采用 UnixFileLock，非阻塞获取、全程持有，不静默退回 SoftFileLock。依据 [filelock 官方说明](https://py-filelock.readthedocs.io/en/latest/)，原生系统锁在进程退出时释放，适合单 Worker 限制。阶段 1 仅完成选型；尚未安装该依赖或验证实际 Worker 互斥，阶段 5 必须补双进程/崩溃恢复测试。
 
-下一阶段是输入与持久化：上传、真实业务表、任务列表/详情、原子领取与重试仓储。等待用户明确授权后开始。开发操作遵守 [AGENTS.md](AGENTS.md)：不自行提交 Git、推送、部署，不编辑上级 `sources/` 或同步规则。
+在 backend 用第三个终端运行 `python -m app.worker`；只有 Worker 处理队列任务，API 不执行模型或媒体长任务。Worker 读取本地 `.env` 中的 DeepSeek 配置，默认 deepseek-flash、关闭思考模式；没有 Key 时明确失败，可补配置后手动重试。`python -m app.worker --once` 仅处理一个待执行任务。第二 Worker 明确退出；Ctrl+C 停止服务，已中断任务可重试。
+
+阶段 6–7 已获用户授权，按阶段测试、报告、提交上传；不执行部署，不编辑上级 `sources/` 或同步规则。Web 上传/结果/导出将在阶段 6 接入。

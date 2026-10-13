@@ -162,7 +162,7 @@ export interface components {
             version: string;
             /**
              * Stage
-             * @default 4
+             * @default 5
              */
             stage: number;
         };
@@ -280,11 +280,8 @@ export interface components {
             task_id: string;
             /** Attempt */
             attempt: number;
-            /**
-             * Tool Name
-             * @enum {string}
-             */
-            tool_name: "load_subtitles" | "extract_audio" | "transcribe_audio" | "generate_notes" | "generate_quiz";
+            /** Tool Name */
+            tool_name: ("load_subtitles" | "extract_audio" | "transcribe_audio" | "generate_notes" | "generate_quiz") | "unknown";
             /**
              * Status
              * @default pending
@@ -313,6 +310,21 @@ export interface components {
             finished_at: string | null;
             /** @default null */
             error: components["schemas"]["ErrorInfo"] | null;
+            /**
+             * Sequence
+             * @default null
+             */
+            sequence: number | null;
+            /**
+             * Duration Ms
+             * @default null
+             */
+            duration_ms: number | null;
+            /**
+             * Cache Hit
+             * @default false
+             */
+            cache_hit: boolean;
         };
         /** ValidationError */
         ValidationError: {

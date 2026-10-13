@@ -14,6 +14,7 @@ dependencies = [
   "srt>=3.5,<4",
   "webvtt-py>=0.5,<1",
   "httpx>=0.28,<1",
+  "filelock>=4.1,<5",
 ]
 
 [project.optional-dependencies]

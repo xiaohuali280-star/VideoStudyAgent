@@ -189,6 +189,37 @@
           "sha256": "0ca9970cee93ee1d56fc7a5925a4737bc330f4ba7a7912b5b90b70ba36187174"
         }
       ]
+    },
+    {
+      "id": "D3",
+      "repository": "HKUDS/DeepTutor",
+      "commit": "6cf793bd868ba5ecbe64722936d4be8fab5a01df",
+      "license": "Apache-2.0",
+      "status": "adopted",
+      "changes": "RequiredArg shape and absent/blank/default/empty-collection semantics adapted to project JSON Schema. Removed DeepTutor protocol/runtime coupling; full Pydantic types, extra fields, whitelist, preconditions and same-task artifact ownership are independently enforced. Correction wording shortened and bounded to one round.",
+      "tests": [
+        "test_d3_missing_blank_default_and_empty_collection_semantics",
+        "test_one_invalid_call_can_be_corrected",
+        "test_two_invalid_calls_fail_without_running_unknown_tools",
+        "test_artifact_ids_cannot_cross_tasks"
+      ],
+      "sources": [
+        {
+          "path": "deeptutor/runtime/agentic/tool_arg_guard.py",
+          "git_blob_sha": "4224ec97874ec9026c61ac8d2a2025f125a8e1cd",
+          "sha256": "4e5b3ffe32ec4c13b5687dc066fac9f51df0207a2d71a2370552b411a72a5252"
+        }
+      ],
+      "local_files": [
+        {
+          "path": "backend/app/adapters/tool_args.py",
+          "sha256": "a1988dae45b890a66cd64dc90744c3314e967d2c1fc7bb4516a2497839c0fc9c"
+        },
+        {
+          "path": "backend/tests/test_agent_worker.py",
+          "sha256": "ade6e1e43b5334c628ba8dfebd96f82300f08d385d8c47727f46c7a37f112386"
+        }
+      ]
     }
   ]
 }

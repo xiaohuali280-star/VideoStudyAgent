@@ -104,6 +104,7 @@ class ArtifactStore:
             raise StudyError("STORAGE_ERROR", "结果文件无效，请重试。", 409, True) from exc
 
     def reuse(self, task_id: UUID, kind: str, key: str, model=None) -> Artifact | None:
+        self.last_cache_hit = False
         entry = self.repository.get_cache(key)
         if not entry or entry.kind != kind:
             return None
@@ -113,4 +114,6 @@ class ArtifactStore:
                 model.model_validate_json(path.read_bytes())
         except (StudyError, ValueError, OSError):
             return None
-        return self.put_file(task_id, kind, path, path.suffix, key)
+        result = self.put_file(task_id, kind, path, path.suffix, key)
+        self.last_cache_hit = True
+        return result
