@@ -1,0 +1,21 @@
+# Local ChatGPT mirror context and synced reference files.
+/AGENTS.md
+/sources/
+
+# Project rules also apply inside videostudyagent/.
+.env
+.env.*
+!.env.example
+.tools/
+.cache/
+.venv/
+node_modules/
+dist/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.py[cod]
+*.log
+*.db
+*.db-shm
+*.db-wal

@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "candidates": [
+    {"id":"B1","repository":"JefferyHcool/BiliNote","commit":"90940fde4d224d0f69ad99674f4af0a1ea52d3c4","license":"MIT","disposition":"direct","status":"candidate","target_stage":4,"source_paths":["backend/app/gpt/request_chunker.py","backend/tests/test_request_chunker.py"],"reason":"独立分块器；阶段 4 补 token 预算和来源映射适配。"},
+    {"id":"B2","repository":"JefferyHcool/BiliNote","commit":"90940fde4d224d0f69ad99674f4af0a1ea52d3c4","license":"MIT","disposition":"adapt","status":"candidate","target_stage":3,"source_paths":["backend/app/transcriber/whisper.py","backend/app/transcriber/base.py"],"reason":"转写封装需解除内部依赖、删除行为和异常吞掉。"},
+    {"id":"B3","repository":"JefferyHcool/BiliNote","commit":"90940fde4d224d0f69ad99674f4af0a1ea52d3c4","license":"MIT","disposition":"adapt","status":"candidate","target_stage":4,"source_paths":["backend/app/gpt/prompt_builder.py","backend/app/gpt/prompt.py"],"reason":"适配笔记章节要求到严格 JSON 输出。"},
+    {"id":"D1","repository":"HKUDS/DeepTutor","commit":"6cf793bd868ba5ecbe64722936d4be8fab5a01df","license":"Apache-2.0","disposition":"direct","status":"candidate","target_stage":4,"source_paths":["deeptutor/agents/_shared/json_output.py","tests/agents/test_shared_json_output.py"],"reason":"独立 JSON 解析函数及测试，仍须后续 Schema 校验。"},
+    {"id":"D2","repository":"HKUDS/DeepTutor","commit":"6cf793bd868ba5ecbe64722936d4be8fab5a01df","license":"Apache-2.0","disposition":"adapt","status":"candidate","target_stage":4,"source_paths":["deeptutor/reading/quiz.py","deeptutor/reading/_grounding.py"],"reason":"改为动态简答题和片段证据，保留数字与负号。"},
+    {"id":"D3","repository":"HKUDS/DeepTutor","commit":"6cf793bd868ba5ecbe64722936d4be8fab5a01df","license":"Apache-2.0","disposition":"adapt","status":"candidate","target_stage":5,"source_paths":["deeptutor/runtime/agentic/tool_arg_guard.py"],"reason":"适配必填参数检查和纠错，不代替类型及权限校验。"},
+    {"id":"T1","repository":"Milind1904/ai-tutor","commit":"438e3aa42af58dcba61fa993dd1519ade55aafcc","license":"MIT","disposition":"adapt","status":"candidate","target_stage":4,"source_paths":["backend/app/ai_engine/chains/quiz_chain.py"],"reason":"保留难度描述，解除 RAG 和固定供应商依赖。"},
+    {"id":"T2","repository":"Milind1904/ai-tutor","commit":"438e3aa42af58dcba61fa993dd1519ade55aafcc","license":"MIT","disposition":"adapt","status":"candidate","target_stage":6,"source_paths":["frontend/src/components/QuizPanel.tsx"],"reason":"条件采用展示片段，移除会话、评分和再生成接口。"},
+    {"id":"B4","repository":"JefferyHcool/BiliNote","commit":"90940fde4d224d0f69ad99674f4af0a1ea52d3c4","license":"MIT","disposition":"adapt","status":"candidate","target_stage":6,"source_paths":["BillNote_frontend/src/pages/HomePage/components/MarkdownViewer.tsx"],"reason":"条件采用纯渲染片段；避免整页依赖。"},
+    {"id":"V1","repository":"Allen0497/video-to-notes","commit":"3d9b2bdc45cc02fa5e53c2703456f4b7942f4678","license":"MIT","disposition":"reference","status":"reference_only","target_stage":3,"source_paths":["scripts/prepare.py"],"reason":"参考字幕优先策略；仅精简本地 ASR 调用为备选，不用有损 TXT。"},
+    {"id":"N1","repository":"SindhujaKumari211/AI-Notes-Generator","commit":"bfbdcacae67577488dda8aa197619b3cd826b52f","license":null,"disposition":"excluded","status":"excluded","target_stage":null,"source_paths":["utils/chunking.py","llm/prompts.py","models/schemas.py"],"reason":"当前未发现明确开源许可证；只允许高层设计参考。"}
+  ]
+}

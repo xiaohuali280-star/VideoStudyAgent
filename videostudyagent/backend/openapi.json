@@ -1,0 +1,1358 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VideoStudyAgent",
+    "description": "Stage 1: health and versioned contracts. Study actions are not enabled.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Step"
+          },
+          "retryable": {
+            "default": false,
+            "title": "Retryable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorInfo",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorInfo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "HealthResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "service": {
+            "type": "string",
+            "const": "VideoStudyAgent",
+            "title": "Service",
+            "default": "VideoStudyAgent"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "stage": {
+            "type": "integer",
+            "const": 1,
+            "title": "Stage",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "HealthResponse"
+      },
+      "StudyOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "question_count": {
+            "default": 5,
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "default": "medium",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "question_type": {
+            "const": "short_answer",
+            "default": "short_answer",
+            "title": "Question Type",
+            "type": "string"
+          },
+          "output_language": {
+            "default": "zh-CN",
+            "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+            "title": "Output Language",
+            "type": "string"
+          },
+          "transcript_language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Language"
+          }
+        },
+        "title": "StudyOptions",
+        "type": "object"
+      },
+      "TranscriptSegment": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "start_ms": {
+            "minimum": 0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "end_ms": {
+            "minimum": 0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "start_ms",
+          "end_ms",
+          "text"
+        ],
+        "title": "TranscriptSegment",
+        "type": "object"
+      },
+      "Transcript": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "subtitle",
+              "asr"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "language": {
+            "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+            "title": "Language",
+            "type": "string"
+          },
+          "duration_ms": {
+            "exclusiveMinimum": 0,
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptSegment"
+            },
+            "minItems": 1,
+            "title": "Segments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source",
+          "language",
+          "duration_ms",
+          "segments"
+        ],
+        "title": "Transcript",
+        "type": "object"
+      },
+      "ChunkPart": {
+        "additionalProperties": false,
+        "properties": {
+          "segment_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "part_index": {
+            "minimum": 0,
+            "title": "Part Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "segment_id",
+          "text",
+          "part_index"
+        ],
+        "title": "ChunkPart",
+        "type": "object"
+      },
+      "TranscriptChunk": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "source_segment_ids": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Source Segment Ids",
+            "type": "array"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/ChunkPart"
+            },
+            "minItems": 1,
+            "title": "Parts",
+            "type": "array"
+          },
+          "token_estimate": {
+            "exclusiveMinimum": 0,
+            "title": "Token Estimate",
+            "type": "integer"
+          },
+          "content_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Content Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_segment_ids",
+          "parts",
+          "token_estimate",
+          "content_hash"
+        ],
+        "title": "TranscriptChunk",
+        "type": "object"
+      },
+      "NoteChapter": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "content_markdown": {
+            "minLength": 1,
+            "title": "Content Markdown",
+            "type": "string"
+          },
+          "source_segment_ids": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Source Segment Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content_markdown",
+          "source_segment_ids"
+        ],
+        "title": "NoteChapter",
+        "type": "object"
+      },
+      "NotesDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "learning_objectives": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "chapters": {
+            "items": {
+              "$ref": "#/components/schemas/NoteChapter"
+            },
+            "minItems": 1,
+            "title": "Chapters",
+            "type": "array"
+          },
+          "key_concepts": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Key Concepts",
+            "type": "array"
+          },
+          "summary": {
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "learning_objectives",
+          "chapters",
+          "key_concepts",
+          "summary"
+        ],
+        "title": "NotesDocument",
+        "type": "object"
+      },
+      "Question": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "short_answer",
+            "default": "short_answer",
+            "title": "Type",
+            "type": "string"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "chapter_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Chapter Id",
+            "type": "string"
+          },
+          "question": {
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "answer": {
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "explanation": {
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "source_segment_ids": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Source Segment Ids",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/SourceEvidence"
+            },
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "difficulty",
+          "chapter_id",
+          "question",
+          "answer",
+          "explanation",
+          "source_segment_ids",
+          "evidence"
+        ],
+        "title": "Question",
+        "type": "object"
+      },
+      "SourceEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "segment_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "quote": {
+            "minLength": 1,
+            "title": "Quote",
+            "type": "string"
+          }
+        },
+        "required": [
+          "segment_id",
+          "quote"
+        ],
+        "title": "SourceEvidence",
+        "type": "object"
+      },
+      "QuizDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "question_count": {
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "question_count",
+          "difficulty",
+          "questions"
+        ],
+        "title": "QuizDocument",
+        "type": "object"
+      },
+      "Task": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/StudyOptions"
+          },
+          "status": {
+            "default": "queued",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "current_step": {
+            "anyOf": [
+              {
+                "enum": [
+                  "load_subtitles",
+                  "extract_audio",
+                  "transcribe_audio",
+                  "generate_notes",
+                  "generate_quiz"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Current Step"
+          },
+          "attempt": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Finished At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "options",
+          "created_at"
+        ],
+        "title": "Task",
+        "type": "object"
+      },
+      "ArtifactSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "audio",
+              "transcript",
+              "notes",
+              "quiz"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "kind",
+          "created_at"
+        ],
+        "title": "ArtifactSummary",
+        "type": "object"
+      },
+      "TaskStep": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "attempt": {
+            "exclusiveMinimum": 0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "tool_name": {
+            "enum": [
+              "load_subtitles",
+              "extract_audio",
+              "transcribe_audio",
+              "generate_notes",
+              "generate_quiz"
+            ],
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "status": {
+            "default": "pending",
+            "enum": [
+              "pending",
+              "running",
+              "succeeded",
+              "failed",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "cache_key": {
+            "anyOf": [
+              {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cache Key"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifact Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Finished At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "attempt",
+          "tool_name"
+        ],
+        "title": "TaskStep",
+        "type": "object"
+      },
+      "TaskDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/Task"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TaskStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "available_artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactSummary"
+            },
+            "title": "Available Artifacts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "TaskDetail",
+        "type": "object"
+      },
+      "StudyResult": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "available_artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactSummary"
+            },
+            "title": "Available Artifacts",
+            "type": "array"
+          },
+          "transcript": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Transcript"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NotesDocument"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "quiz": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuizDocument"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "task_id"
+        ],
+        "title": "StudyResult",
+        "type": "object"
+      },
+      "InputAsset": {
+        "additionalProperties": false,
+        "properties": {
+          "storage_key": {
+            "minLength": 1,
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "video",
+              "subtitle"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "original_name": {
+            "minLength": 1,
+            "title": "Original Name",
+            "type": "string"
+          },
+          "size_bytes": {
+            "exclusiveMinimum": 0,
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Duration Ms"
+          }
+        },
+        "required": [
+          "storage_key",
+          "sha256",
+          "id",
+          "task_id",
+          "kind",
+          "original_name",
+          "size_bytes"
+        ],
+        "title": "InputAsset",
+        "type": "object"
+      },
+      "Artifact": {
+        "additionalProperties": false,
+        "properties": {
+          "storage_key": {
+            "minLength": 1,
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "audio",
+              "transcript",
+              "notes",
+              "quiz"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "cache_key": {
+            "anyOf": [
+              {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cache Key"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "storage_key",
+          "sha256",
+          "id",
+          "task_id",
+          "kind",
+          "created_at"
+        ],
+        "title": "Artifact",
+        "type": "object"
+      },
+      "CacheEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "storage_key": {
+            "minLength": 1,
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "key": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "audio",
+              "transcript",
+              "notes",
+              "quiz"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "storage_key",
+          "sha256",
+          "key",
+          "kind",
+          "created_at"
+        ],
+        "title": "CacheEntry",
+        "type": "object"
+      },
+      "ToolCallRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "attempt": {
+            "exclusiveMinimum": 0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "sequence": {
+            "exclusiveMinimum": 0,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "tool_name": {
+            "enum": [
+              "load_subtitles",
+              "extract_audio",
+              "transcribe_audio",
+              "generate_notes",
+              "generate_quiz"
+            ],
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "running",
+              "succeeded",
+              "failed",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifact Id"
+          },
+          "duration_ms": {
+            "minimum": 0,
+            "title": "Duration Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task_id",
+          "attempt",
+          "sequence",
+          "tool_name",
+          "status",
+          "duration_ms"
+        ],
+        "title": "ToolCallRecord",
+        "type": "object"
+      },
+      "ChatMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "enum": [
+              "system",
+              "user",
+              "assistant",
+              "tool"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "content": {
+            "default": "",
+            "title": "Content",
+            "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tool Call Id"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/ToolCall"
+            },
+            "title": "Tool Calls",
+            "type": "array"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "ChatMessage",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "ToolCall": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Parameters",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "parameters"
+        ],
+        "title": "ToolDefinition",
+        "type": "object"
+      },
+      "ModelRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolDefinition"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "title": "ModelRequest",
+        "type": "object"
+      },
+      "ModelReply": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "default": "",
+            "title": "Content",
+            "type": "string"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/ToolCall"
+            },
+            "title": "Tool Calls",
+            "type": "array"
+          }
+        },
+        "title": "ModelReply",
+        "type": "object"
+      }
+    }
+  }
+}
