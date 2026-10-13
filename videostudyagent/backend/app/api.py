@@ -5,11 +5,14 @@ from fastapi import APIRouter, Query, Request
 from pydantic import ValidationError
 from starlette.datastructures import UploadFile
 from starlette.exceptions import HTTPException
+from starlette.responses import FileResponse
 
 from app.core.errors import StudyError
 from app.db.repository import TaskRepository, initialize_database
 from app.schemas.study import StudyOptions
-from app.schemas.tasks import Task, TaskDetail
+from app.schemas.tasks import StudyResult, Task, TaskDetail
+from app.services.exports import ResultService
+from app.services.storage import ArtifactStore
 from app.services.uploads import save_uploads
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -94,4 +97,44 @@ def task_detail(request: Request, task_id: UUID):
 
 @router.post("/{task_id}/retry", response_model=Task, status_code=202)
 def retry_task(request: Request, task_id: UUID):
-    return repository(request).retry(task_id)
+    repo = repository(request)
+    if repo.get(task_id).status == "succeeded":
+        try:
+            value = ResultService(request.app.state.settings.data_dir, repo).result(task_id)
+            if not (value.transcript and value.notes and value.quiz):
+                raise StudyError("STORAGE_ERROR", "学习资料不完整。", 409, True)
+        except StudyError as exc:
+            if exc.code != "STORAGE_ERROR":
+                raise
+            repo.invalidate_completed(task_id)
+    return repo.retry(task_id)
+
+
+@router.get("/{task_id}/result", response_model=StudyResult)
+def study_result(request: Request, task_id: UUID):
+    return ResultService(request.app.state.settings.data_dir, repository(request)).result(task_id)
+
+
+@router.get("/{task_id}/exports/{format}")
+def export_result(request: Request, task_id: UUID, format: str):
+    path = ResultService(request.app.state.settings.data_dir, repository(request)).export(
+        task_id, format
+    )
+    types = {"json": "application/json", "md": "text/markdown", "srt": "application/x-subrip"}
+    return FileResponse(path, filename=format, media_type=types[path.suffix[1:]])
+
+
+@router.get("/{task_id}/video")
+def course_video(request: Request, task_id: UUID):
+    repo = repository(request)
+    repo.get(task_id)
+    for asset in repo.assets(task_id):
+        if asset.kind == "video":
+            path = ArtifactStore(request.app.state.settings.data_dir, repo).verify(asset)
+            return FileResponse(
+                path,
+                filename="course.mp4",
+                media_type="video/mp4",
+                content_disposition_type="inline",
+            )
+    raise StudyError("NOT_FOUND", "该课程没有视频文件。", 404)

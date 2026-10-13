@@ -31,7 +31,7 @@ def test_health_needs_no_key_models_or_database(tmp_path):
         "status": "ok",
         "service": "VideoStudyAgent",
         "version": "0.1.0",
-        "stage": 5,
+        "stage": 6,
     }
     assert request(application, "GET", "/api/not-implemented").status_code == 404
     assert not data_dir.exists()
@@ -106,6 +106,10 @@ def test_openapi_snapshot_and_all_component_references():
         "/api/tasks",
         "/api/tasks/{task_id}",
         "/api/tasks/{task_id}/retry",
+        "/api/tasks/{task_id}/result",
+        "/api/tasks/{task_id}/exports/{format}",
+        "/api/tasks/{task_id}/video",
+        "/api/config",
     }
     assert "QuizDocument" in schema["components"]["schemas"]
     snapshot = json.loads((Path(__file__).parents[1] / "openapi.json").read_text("utf-8"))

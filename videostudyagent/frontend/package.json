@@ -3,26 +3,38 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "engines": { "node": ">=22.12.0 <25" },
-  "dependencies": { "react": ">=19 <20", "react-dom": ">=19 <20" },
+  "engines": {
+    "node": ">=22.12.0 <25"
+  },
+  "dependencies": {
+    "katex": "^0.19.0",
+    "react": ">=19 <20",
+    "react-dom": ">=19 <20",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0"
+  },
   "devDependencies": {
-    "@vitejs/plugin-react": ">=5 <7",
+    "@playwright/test": "^1.64.0",
+    "@testing-library/jest-dom": ">=6 <7",
+    "@testing-library/react": ">=16 <17",
+    "@types/node": ">=24 <25",
     "@types/react": ">=19 <20",
     "@types/react-dom": ">=19 <20",
-    "@types/node": ">=24 <25",
+    "@vitejs/plugin-react": ">=5 <7",
+    "jsdom": ">=26 <30",
+    "openapi-typescript": ">=7 <8",
     "typescript": ">=5.9 <6",
     "vite": ">=7 <9",
-    "vitest": ">=4 <5",
-    "jsdom": ">=26 <30",
-    "@testing-library/react": ">=16 <17",
-    "@testing-library/jest-dom": ">=6 <7",
-    "openapi-typescript": ">=7 <8"
+    "vitest": ">=4 <5"
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "generate:types": "openapi-typescript ../backend/openapi.json -o src/api/schema.d.ts",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   }
 }

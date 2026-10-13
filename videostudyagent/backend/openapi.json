@@ -199,6 +199,140 @@
         }
       }
     },
+    "/api/tasks/{task_id}/result": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Study Result",
+        "operationId": "study_result_api_tasks__task_id__result_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/exports/{format}": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Export Result",
+        "operationId": "export_result_api_tasks__task_id__exports__format__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/video": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Course Video",
+        "operationId": "course_video_api_tasks__task_id__video_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -220,6 +354,24 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "summary": "Public Config",
+        "operationId": "public_config_api_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicConfig"
                 }
               }
             }
@@ -266,6 +418,7 @@
           }
         },
         "required": [
+          "schema_version",
           "id",
           "task_id",
           "kind",
@@ -307,7 +460,9 @@
         },
         "required": [
           "code",
-          "message"
+          "message",
+          "step",
+          "retryable"
         ],
         "title": "ErrorInfo",
         "type": "object"
@@ -327,6 +482,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "schema_version",
           "error"
         ],
         "title": "ErrorResponse"
@@ -373,15 +529,313 @@
             "maximum": 7.0,
             "minimum": 1.0,
             "title": "Stage",
-            "default": 5
+            "default": 6
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "version"
+          "schema_version",
+          "status",
+          "service",
+          "version",
+          "stage"
         ],
         "title": "HealthResponse"
+      },
+      "NoteChapter": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "content_markdown": {
+            "minLength": 1,
+            "title": "Content Markdown",
+            "type": "string"
+          },
+          "source_segment_ids": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Source Segment Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content_markdown",
+          "source_segment_ids"
+        ],
+        "title": "NoteChapter",
+        "type": "object"
+      },
+      "NotesDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "learning_objectives": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "chapters": {
+            "items": {
+              "$ref": "#/components/schemas/NoteChapter"
+            },
+            "minItems": 1,
+            "title": "Chapters",
+            "type": "array"
+          },
+          "key_concepts": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Key Concepts",
+            "type": "array"
+          },
+          "summary": {
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "title",
+          "learning_objectives",
+          "chapters",
+          "key_concepts",
+          "summary"
+        ],
+        "title": "NotesDocument",
+        "type": "object"
+      },
+      "PublicConfig": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "max_video_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Video Bytes"
+          },
+          "max_subtitle_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Subtitle Bytes"
+          },
+          "max_duration_ms": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Duration Ms"
+          },
+          "export_formats": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "notes.md",
+                "quiz.md",
+                "quiz.json",
+                "transcript.json",
+                "transcript.srt"
+              ]
+            },
+            "type": "array",
+            "title": "Export Formats"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "max_video_bytes",
+          "max_subtitle_bytes",
+          "max_duration_ms",
+          "export_formats"
+        ],
+        "title": "PublicConfig"
+      },
+      "Question": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "short_answer",
+            "default": "short_answer",
+            "title": "Type",
+            "type": "string"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "chapter_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Chapter Id",
+            "type": "string"
+          },
+          "question": {
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "answer": {
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "explanation": {
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "source_segment_ids": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Source Segment Ids",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/SourceEvidence"
+            },
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "difficulty",
+          "chapter_id",
+          "question",
+          "answer",
+          "explanation",
+          "source_segment_ids",
+          "evidence"
+        ],
+        "title": "Question",
+        "type": "object"
+      },
+      "QuizDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "question_count": {
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "question_count",
+          "difficulty",
+          "questions"
+        ],
+        "title": "QuizDocument",
+        "type": "object"
+      },
+      "SourceEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "segment_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "quote": {
+            "minLength": 1,
+            "title": "Quote",
+            "type": "string"
+          }
+        },
+        "required": [
+          "segment_id",
+          "quote"
+        ],
+        "title": "SourceEvidence",
+        "type": "object"
       },
       "StudyOptions": {
         "additionalProperties": false,
@@ -429,7 +883,80 @@
             "title": "Transcript Language"
           }
         },
+        "required": [
+          "question_count",
+          "difficulty",
+          "question_type",
+          "output_language",
+          "transcript_language"
+        ],
         "title": "StudyOptions",
+        "type": "object"
+      },
+      "StudyResult": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "available_artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactSummary"
+            },
+            "title": "Available Artifacts",
+            "type": "array"
+          },
+          "transcript": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Transcript"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NotesDocument"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "quiz": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuizDocument"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "schema_version",
+          "task_id",
+          "available_artifacts",
+          "transcript",
+          "notes",
+          "quiz"
+        ],
+        "title": "StudyResult",
         "type": "object"
       },
       "Task": {
@@ -535,10 +1062,17 @@
           }
         },
         "required": [
+          "schema_version",
           "id",
           "title",
           "options",
-          "created_at"
+          "status",
+          "current_step",
+          "attempt",
+          "created_at",
+          "started_at",
+          "finished_at",
+          "error"
         ],
         "title": "Task",
         "type": "object"
@@ -568,10 +1102,25 @@
             },
             "title": "Available Artifacts",
             "type": "array"
+          },
+          "input_kinds": {
+            "items": {
+              "enum": [
+                "video",
+                "subtitle"
+              ],
+              "type": "string"
+            },
+            "title": "Input Kinds",
+            "type": "array"
           }
         },
         "required": [
-          "task"
+          "schema_version",
+          "task",
+          "steps",
+          "available_artifacts",
+          "input_kinds"
         ],
         "title": "TaskDetail",
         "type": "object"
@@ -727,12 +1276,103 @@
           }
         },
         "required": [
+          "schema_version",
           "id",
           "task_id",
           "attempt",
-          "tool_name"
+          "tool_name",
+          "status",
+          "cache_key",
+          "artifact_id",
+          "started_at",
+          "finished_at",
+          "error",
+          "sequence",
+          "duration_ms",
+          "cache_hit"
         ],
         "title": "TaskStep",
+        "type": "object"
+      },
+      "Transcript": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "subtitle",
+              "asr"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "language": {
+            "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+            "title": "Language",
+            "type": "string"
+          },
+          "duration_ms": {
+            "exclusiveMinimum": 0,
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptSegment"
+            },
+            "minItems": 1,
+            "title": "Segments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "source",
+          "language",
+          "duration_ms",
+          "segments"
+        ],
+        "title": "Transcript",
+        "type": "object"
+      },
+      "TranscriptSegment": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "start_ms": {
+            "minimum": 0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "end_ms": {
+            "minimum": 0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "start_ms",
+          "end_ms",
+          "text"
+        ],
+        "title": "TranscriptSegment",
         "type": "object"
       },
       "ValidationError": {
@@ -774,86 +1414,6 @@
           "type"
         ],
         "title": "ValidationError"
-      },
-      "TranscriptSegment": {
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "maxLength": 80,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9_-]+$",
-            "title": "Id",
-            "type": "string"
-          },
-          "start_ms": {
-            "minimum": 0,
-            "title": "Start Ms",
-            "type": "integer"
-          },
-          "end_ms": {
-            "minimum": 0,
-            "title": "End Ms",
-            "type": "integer"
-          },
-          "text": {
-            "minLength": 1,
-            "title": "Text",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "start_ms",
-          "end_ms",
-          "text"
-        ],
-        "title": "TranscriptSegment",
-        "type": "object"
-      },
-      "Transcript": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.0",
-            "default": "1.0",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "source": {
-            "enum": [
-              "subtitle",
-              "asr"
-            ],
-            "title": "Source",
-            "type": "string"
-          },
-          "language": {
-            "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
-            "title": "Language",
-            "type": "string"
-          },
-          "duration_ms": {
-            "exclusiveMinimum": 0,
-            "title": "Duration Ms",
-            "type": "integer"
-          },
-          "segments": {
-            "items": {
-              "$ref": "#/components/schemas/TranscriptSegment"
-            },
-            "minItems": 1,
-            "title": "Segments",
-            "type": "array"
-          }
-        },
-        "required": [
-          "source",
-          "language",
-          "duration_ms",
-          "segments"
-        ],
-        "title": "Transcript",
-        "type": "object"
       },
       "ChunkPart": {
         "additionalProperties": false,
@@ -934,309 +1494,6 @@
         "title": "TranscriptChunk",
         "type": "object"
       },
-      "NoteChapter": {
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "maxLength": 80,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9_-]+$",
-            "title": "Id",
-            "type": "string"
-          },
-          "title": {
-            "minLength": 1,
-            "title": "Title",
-            "type": "string"
-          },
-          "content_markdown": {
-            "minLength": 1,
-            "title": "Content Markdown",
-            "type": "string"
-          },
-          "source_segment_ids": {
-            "items": {
-              "maxLength": 80,
-              "minLength": 1,
-              "pattern": "^[A-Za-z0-9_-]+$",
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Source Segment Ids",
-            "type": "array"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "content_markdown",
-          "source_segment_ids"
-        ],
-        "title": "NoteChapter",
-        "type": "object"
-      },
-      "NotesDocument": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.0",
-            "default": "1.0",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "title": {
-            "minLength": 1,
-            "title": "Title",
-            "type": "string"
-          },
-          "learning_objectives": {
-            "items": {
-              "minLength": 1,
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Learning Objectives",
-            "type": "array"
-          },
-          "chapters": {
-            "items": {
-              "$ref": "#/components/schemas/NoteChapter"
-            },
-            "minItems": 1,
-            "title": "Chapters",
-            "type": "array"
-          },
-          "key_concepts": {
-            "items": {
-              "minLength": 1,
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Key Concepts",
-            "type": "array"
-          },
-          "summary": {
-            "minLength": 1,
-            "title": "Summary",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "learning_objectives",
-          "chapters",
-          "key_concepts",
-          "summary"
-        ],
-        "title": "NotesDocument",
-        "type": "object"
-      },
-      "Question": {
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "maxLength": 80,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9_-]+$",
-            "title": "Id",
-            "type": "string"
-          },
-          "type": {
-            "const": "short_answer",
-            "default": "short_answer",
-            "title": "Type",
-            "type": "string"
-          },
-          "difficulty": {
-            "enum": [
-              "easy",
-              "medium",
-              "hard"
-            ],
-            "title": "Difficulty",
-            "type": "string"
-          },
-          "chapter_id": {
-            "maxLength": 80,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9_-]+$",
-            "title": "Chapter Id",
-            "type": "string"
-          },
-          "question": {
-            "minLength": 1,
-            "title": "Question",
-            "type": "string"
-          },
-          "answer": {
-            "minLength": 1,
-            "title": "Answer",
-            "type": "string"
-          },
-          "explanation": {
-            "minLength": 1,
-            "title": "Explanation",
-            "type": "string"
-          },
-          "source_segment_ids": {
-            "items": {
-              "maxLength": 80,
-              "minLength": 1,
-              "pattern": "^[A-Za-z0-9_-]+$",
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Source Segment Ids",
-            "type": "array"
-          },
-          "evidence": {
-            "items": {
-              "$ref": "#/components/schemas/SourceEvidence"
-            },
-            "minItems": 1,
-            "title": "Evidence",
-            "type": "array"
-          }
-        },
-        "required": [
-          "id",
-          "difficulty",
-          "chapter_id",
-          "question",
-          "answer",
-          "explanation",
-          "source_segment_ids",
-          "evidence"
-        ],
-        "title": "Question",
-        "type": "object"
-      },
-      "SourceEvidence": {
-        "additionalProperties": false,
-        "properties": {
-          "segment_id": {
-            "maxLength": 80,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9_-]+$",
-            "title": "Segment Id",
-            "type": "string"
-          },
-          "quote": {
-            "minLength": 1,
-            "title": "Quote",
-            "type": "string"
-          }
-        },
-        "required": [
-          "segment_id",
-          "quote"
-        ],
-        "title": "SourceEvidence",
-        "type": "object"
-      },
-      "QuizDocument": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.0",
-            "default": "1.0",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "question_count": {
-            "maximum": 20,
-            "minimum": 1,
-            "title": "Question Count",
-            "type": "integer"
-          },
-          "difficulty": {
-            "enum": [
-              "easy",
-              "medium",
-              "hard"
-            ],
-            "title": "Difficulty",
-            "type": "string"
-          },
-          "questions": {
-            "items": {
-              "$ref": "#/components/schemas/Question"
-            },
-            "maxItems": 20,
-            "minItems": 1,
-            "title": "Questions",
-            "type": "array"
-          }
-        },
-        "required": [
-          "question_count",
-          "difficulty",
-          "questions"
-        ],
-        "title": "QuizDocument",
-        "type": "object"
-      },
-      "StudyResult": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.0",
-            "default": "1.0",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "task_id": {
-            "format": "uuid",
-            "title": "Task Id",
-            "type": "string"
-          },
-          "available_artifacts": {
-            "items": {
-              "$ref": "#/components/schemas/ArtifactSummary"
-            },
-            "title": "Available Artifacts",
-            "type": "array"
-          },
-          "transcript": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Transcript"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/NotesDocument"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null
-          },
-          "quiz": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QuizDocument"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null
-          }
-        },
-        "required": [
-          "task_id"
-        ],
-        "title": "StudyResult",
-        "type": "object"
-      },
       "InputAsset": {
         "additionalProperties": false,
         "properties": {
@@ -1299,7 +1556,8 @@
           "task_id",
           "kind",
           "original_name",
-          "size_bytes"
+          "size_bytes",
+          "duration_ms"
         ],
         "title": "InputAsset",
         "type": "object"
@@ -1365,9 +1623,11 @@
         "required": [
           "storage_key",
           "sha256",
+          "schema_version",
           "id",
           "task_id",
           "kind",
+          "cache_key",
           "created_at"
         ],
         "title": "Artifact",
@@ -1418,6 +1678,7 @@
           "sha256",
           "key",
           "kind",
+          "schema_version",
           "created_at"
         ],
         "title": "CacheEntry",
@@ -1488,6 +1749,7 @@
           "sequence",
           "tool_name",
           "status",
+          "artifact_id",
           "duration_ms"
         ],
         "title": "ToolCallRecord",
@@ -1532,7 +1794,10 @@
           }
         },
         "required": [
-          "role"
+          "role",
+          "content",
+          "tool_call_id",
+          "tool_calls"
         ],
         "title": "ChatMessage",
         "type": "object"
@@ -1626,7 +1891,10 @@
           }
         },
         "required": [
-          "messages"
+          "messages",
+          "tools",
+          "max_output_tokens",
+          "json_mode"
         ],
         "title": "ModelRequest",
         "type": "object"
@@ -1659,6 +1927,12 @@
             "type": "integer"
           }
         },
+        "required": [
+          "content",
+          "tool_calls",
+          "input_tokens",
+          "output_tokens"
+        ],
         "title": "ModelReply",
         "type": "object"
       }

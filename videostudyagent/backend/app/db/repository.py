@@ -121,6 +121,7 @@ class TaskRepository:
         return TaskDetail(
             task=task,
             steps=steps,
+            input_kinds=[asset.kind for asset in self.assets(task_id)],
             available_artifacts=[
                 ArtifactSummary.model_validate(
                     item.model_dump(include={"id", "task_id", "kind", "created_at"})
@@ -187,6 +188,28 @@ class TaskRepository:
                 )
             )
         return task
+
+    def invalidate_completed(self, task_id: UUID | str):
+        task = self.get(task_id)
+        task = task.model_copy(
+            update={
+                "status": "failed",
+                "error": ErrorInfo(
+                    code="STORAGE_ERROR",
+                    message="学习结果缺失或损坏，可重新处理。",
+                    retryable=True,
+                ),
+            }
+        )
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(TaskRow)
+                .where(
+                    TaskRow.id == str(task_id),
+                    TaskRow.status == "succeeded",
+                )
+                .values(status="failed", payload=task.model_dump(mode="json"))
+            )
 
     def finish(self, task_id: UUID | str, error: ErrorInfo | None = None):
         task = self.get(task_id)

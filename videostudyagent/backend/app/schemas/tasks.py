@@ -21,7 +21,6 @@ ToolName = Literal[
     "load_subtitles", "extract_audio", "transcribe_audio", "generate_notes", "generate_quiz"
 ]
 ArtifactKind = Literal["audio", "transcript", "notes", "quiz"]
-ExportFormat = Literal["notes.md", "quiz.md", "quiz.json", "transcript.json", "transcript.srt"]
 
 
 class StoredObject(ContractModel):
@@ -119,6 +118,7 @@ class TaskDetail(DocumentModel):
     task: Task
     steps: list[TaskStep] = Field(default_factory=list)
     available_artifacts: list[ArtifactSummary] = Field(default_factory=list)
+    input_kinds: list[Literal["video", "subtitle"]] = Field(default_factory=list)
 
 
 class StudyResult(DocumentModel):

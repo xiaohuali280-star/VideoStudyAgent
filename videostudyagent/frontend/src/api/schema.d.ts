@@ -56,6 +56,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/{task_id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Study Result */
+        get: operations["study_result_api_tasks__task_id__result_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/exports/{format}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Result */
+        get: operations["export_result_api_tasks__task_id__exports__format__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Course Video */
+        get: operations["course_video_api_tasks__task_id__video_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -65,6 +116,23 @@ export interface paths {
         };
         /** Health */
         get: operations["health_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Public Config */
+        get: operations["public_config_api_config_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -162,9 +230,109 @@ export interface components {
             version: string;
             /**
              * Stage
-             * @default 5
+             * @default 6
              */
             stage: number;
+        };
+        /** NoteChapter */
+        NoteChapter: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Content Markdown */
+            content_markdown: string;
+            /** Source Segment Ids */
+            source_segment_ids: string[];
+        };
+        /** NotesDocument */
+        NotesDocument: {
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /** Title */
+            title: string;
+            /** Learning Objectives */
+            learning_objectives: string[];
+            /** Chapters */
+            chapters: components["schemas"]["NoteChapter"][];
+            /** Key Concepts */
+            key_concepts: string[];
+            /** Summary */
+            summary: string;
+        };
+        /** PublicConfig */
+        PublicConfig: {
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /** Max Video Bytes */
+            max_video_bytes: number;
+            /** Max Subtitle Bytes */
+            max_subtitle_bytes: number;
+            /** Max Duration Ms */
+            max_duration_ms: number;
+            /** Export Formats */
+            export_formats: ("notes.md" | "quiz.md" | "quiz.json" | "transcript.json" | "transcript.srt")[];
+        };
+        /** Question */
+        Question: {
+            /** Id */
+            id: string;
+            /**
+             * Type
+             * @default short_answer
+             * @constant
+             */
+            type: "short_answer";
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "easy" | "medium" | "hard";
+            /** Chapter Id */
+            chapter_id: string;
+            /** Question */
+            question: string;
+            /** Answer */
+            answer: string;
+            /** Explanation */
+            explanation: string;
+            /** Source Segment Ids */
+            source_segment_ids: string[];
+            /** Evidence */
+            evidence: components["schemas"]["SourceEvidence"][];
+        };
+        /** QuizDocument */
+        QuizDocument: {
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /** Question Count */
+            question_count: number;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "easy" | "medium" | "hard";
+            /** Questions */
+            questions: components["schemas"]["Question"][];
+        };
+        /** SourceEvidence */
+        SourceEvidence: {
+            /** Segment Id */
+            segment_id: string;
+            /** Quote */
+            quote: string;
         };
         /** StudyOptions */
         StudyOptions: {
@@ -195,6 +363,28 @@ export interface components {
              * @default null
              */
             transcript_language: string | null;
+        };
+        /** StudyResult */
+        StudyResult: {
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Available Artifacts */
+            available_artifacts: components["schemas"]["ArtifactSummary"][];
+            /** @default null */
+            transcript: components["schemas"]["Transcript"] | null;
+            /** @default null */
+            notes: components["schemas"]["NotesDocument"] | null;
+            /** @default null */
+            quiz: components["schemas"]["QuizDocument"] | null;
         };
         /** Task */
         Task: {
@@ -256,9 +446,11 @@ export interface components {
             schema_version: "1.0";
             task: components["schemas"]["Task"];
             /** Steps */
-            steps?: components["schemas"]["TaskStep"][];
+            steps: components["schemas"]["TaskStep"][];
             /** Available Artifacts */
-            available_artifacts?: components["schemas"]["ArtifactSummary"][];
+            available_artifacts: components["schemas"]["ArtifactSummary"][];
+            /** Input Kinds */
+            input_kinds: ("video" | "subtitle")[];
         };
         /** TaskStep */
         TaskStep: {
@@ -326,30 +518,6 @@ export interface components {
              */
             cache_hit: boolean;
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
-        };
-        /** TranscriptSegment */
-        TranscriptSegment: {
-            /** Id */
-            id: string;
-            /** Start Ms */
-            start_ms: number;
-            /** End Ms */
-            end_ms: number;
-            /** Text */
-            text: string;
-        };
         /** Transcript */
         Transcript: {
             /**
@@ -369,6 +537,30 @@ export interface components {
             duration_ms: number;
             /** Segments */
             segments: components["schemas"]["TranscriptSegment"][];
+        };
+        /** TranscriptSegment */
+        TranscriptSegment: {
+            /** Id */
+            id: string;
+            /** Start Ms */
+            start_ms: number;
+            /** End Ms */
+            end_ms: number;
+            /** Text */
+            text: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
         /** ChunkPart */
         ChunkPart: {
@@ -391,111 +583,6 @@ export interface components {
             token_estimate: number;
             /** Content Hash */
             content_hash: string;
-        };
-        /** NoteChapter */
-        NoteChapter: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Content Markdown */
-            content_markdown: string;
-            /** Source Segment Ids */
-            source_segment_ids: string[];
-        };
-        /** NotesDocument */
-        NotesDocument: {
-            /**
-             * Schema Version
-             * @default 1.0
-             * @constant
-             */
-            schema_version: "1.0";
-            /** Title */
-            title: string;
-            /** Learning Objectives */
-            learning_objectives: string[];
-            /** Chapters */
-            chapters: components["schemas"]["NoteChapter"][];
-            /** Key Concepts */
-            key_concepts: string[];
-            /** Summary */
-            summary: string;
-        };
-        /** Question */
-        Question: {
-            /** Id */
-            id: string;
-            /**
-             * Type
-             * @default short_answer
-             * @constant
-             */
-            type: "short_answer";
-            /**
-             * Difficulty
-             * @enum {string}
-             */
-            difficulty: "easy" | "medium" | "hard";
-            /** Chapter Id */
-            chapter_id: string;
-            /** Question */
-            question: string;
-            /** Answer */
-            answer: string;
-            /** Explanation */
-            explanation: string;
-            /** Source Segment Ids */
-            source_segment_ids: string[];
-            /** Evidence */
-            evidence: components["schemas"]["SourceEvidence"][];
-        };
-        /** SourceEvidence */
-        SourceEvidence: {
-            /** Segment Id */
-            segment_id: string;
-            /** Quote */
-            quote: string;
-        };
-        /** QuizDocument */
-        QuizDocument: {
-            /**
-             * Schema Version
-             * @default 1.0
-             * @constant
-             */
-            schema_version: "1.0";
-            /** Question Count */
-            question_count: number;
-            /**
-             * Difficulty
-             * @enum {string}
-             */
-            difficulty: "easy" | "medium" | "hard";
-            /** Questions */
-            questions: components["schemas"]["Question"][];
-        };
-        /** StudyResult */
-        StudyResult: {
-            /**
-             * Schema Version
-             * @default 1.0
-             * @constant
-             */
-            schema_version: "1.0";
-            /**
-             * Task Id
-             * Format: uuid
-             */
-            task_id: string;
-            /** Available Artifacts */
-            available_artifacts?: components["schemas"]["ArtifactSummary"][];
-            /** @default null */
-            transcript: components["schemas"]["Transcript"] | null;
-            /** @default null */
-            notes: components["schemas"]["NotesDocument"] | null;
-            /** @default null */
-            quiz: components["schemas"]["QuizDocument"] | null;
         };
         /** InputAsset */
         InputAsset: {
@@ -638,7 +725,7 @@ export interface components {
              */
             tool_call_id: string | null;
             /** Tool Calls */
-            tool_calls?: components["schemas"]["ToolCall"][];
+            tool_calls: components["schemas"]["ToolCall"][];
         };
         JsonValue: unknown;
         /** ToolCall */
@@ -668,7 +755,7 @@ export interface components {
             /** Messages */
             messages: components["schemas"]["ChatMessage"][];
             /** Tools */
-            tools?: components["schemas"]["ToolDefinition"][];
+            tools: components["schemas"]["ToolDefinition"][];
             /**
              * Max Output Tokens
              * @default 4096
@@ -688,7 +775,7 @@ export interface components {
              */
             content: string;
             /** Tool Calls */
-            tool_calls?: components["schemas"]["ToolCall"][];
+            tool_calls: components["schemas"]["ToolCall"][];
             /**
              * Input Tokens
              * @default 0
@@ -835,6 +922,100 @@ export interface operations {
             };
         };
     };
+    study_result_api_tasks__task_id__result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_result_api_tasks__task_id__exports__format__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                format: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    course_video_api_tasks__task_id__video_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -860,6 +1041,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    public_config_api_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicConfig"];
                 };
             };
         };

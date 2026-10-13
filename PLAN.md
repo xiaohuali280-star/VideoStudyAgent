@@ -1,6 +1,6 @@
 # VideoStudyAgent — MVP 规划
 
-状态：阶段 1–5 已完成对应离线验证，另有真实 ASR/FFmpeg、原生进程锁和超时验证；逐阶段提交上传，阶段 5 上传后接续阶段 6。模型 deepseek-flash；真实 LLM 验收按用户要求延后。
+状态：阶段 1–6 已完成对应离线验证，阶段 6：177 项后端、13 项前端、2 项浏览器测试通过；逐阶段提交上传后接续阶段 7。模型 deepseek-flash；真实 LLM 验收按用户要求延后。详细记录见 videostudyagent/docs/STAGE_6_REPORT.md。
 
 初稿日期：2026-10-12；修订日期：2026-10-13（Asia/Shanghai）。
 本文件同时记录设计与阶段进度；仅阶段 1 标记的内容已实现，其余为待实现约定。具体依赖已在阶段 1 锁定，实测范围见 [阶段 1 验收记录](videostudyagent/docs/STAGE_1_REPORT.md)。

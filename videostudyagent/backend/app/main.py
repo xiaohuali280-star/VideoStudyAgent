@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import get_args
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -11,7 +12,7 @@ from app import __version__
 from app.api import router
 from app.core.config import Settings
 from app.core.errors import StudyError
-from app.schemas.common import ErrorInfo, ErrorResponse, HealthResponse
+from app.schemas.common import ErrorInfo, ErrorResponse, ExportFormat, HealthResponse, PublicConfig
 from app.schemas.providers import ModelReply, ModelRequest, ToolCall, ToolDefinition
 from app.schemas.study import NotesDocument, QuizDocument, StudyOptions, Transcript, TranscriptChunk
 from app.schemas.tasks import (
@@ -108,6 +109,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def health() -> HealthResponse:
         return HealthResponse(version=__version__)
 
+    @application.get("/api/config", response_model=PublicConfig)
+    def public_config() -> PublicConfig:
+        return PublicConfig(
+            max_video_bytes=settings.max_video_bytes,
+            max_subtitle_bytes=settings.max_subtitle_bytes,
+            max_duration_ms=settings.max_duration_ms,
+            export_formats=list(get_args(ExportFormat)),
+        )
+
     @application.exception_handler(RequestValidationError)
     async def validation_error(_: Request, __: RequestValidationError) -> JSONResponse:
         return error_response(422, "VALIDATION_ERROR", "请求参数不符合接口约定。")
@@ -133,7 +143,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             components = schema.setdefault("components", {}).setdefault("schemas", {})
             # Publish future DTOs without advertising unimplemented HTTP routes.
             for model in DOMAIN_CONTRACTS:
-                model_schema = model.model_json_schema(ref_template="#/components/schemas/{model}")
+                model_schema = model.model_json_schema(
+                    ref_template="#/components/schemas/{model}", mode="serialization"
+                )
                 components.update(model_schema.pop("$defs", {}))
                 components[model.__name__] = model_schema
             application.openapi_schema = schema

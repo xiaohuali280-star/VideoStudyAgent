@@ -7,7 +7,7 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 5173,
     strictPort: true,
-    proxy: { "/api": { target: "http://127.0.0.1:8000" } },
+    proxy: { "/api": { target: process.env.VSA_API_PROXY || "http://127.0.0.1:8000" } },
   },
   preview: { host: "127.0.0.1" },
   test: {
@@ -15,5 +15,6 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/tests/setup.ts"],
     clearMocks: true,
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

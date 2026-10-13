@@ -220,6 +220,31 @@
           "sha256": "ade6e1e43b5334c628ba8dfebd96f82300f08d385d8c47727f46c7a37f112386"
         }
       ]
+    },
+    {
+      "id": "B4",
+      "status": "adopted",
+      "repository": "JefferyHcool/BiliNote",
+      "commit": "90940fde4d224d0f69ad99674f4af0a1ea52d3c4",
+      "license": "MIT",
+      "changes": "Adapted ReactMarkdown/GFM/math/KaTeX pipeline only; removed page stores, chat, images and highlighting; disabled raw HTML, unsafe links, remote image rendering and trusted math.",
+      "tests": [
+        "Markdown renders math and tables while suppressing HTML, images and unsafe links",
+        "Playwright upload and matching exports"
+      ],
+      "sources": [
+        {
+          "path": "BillNote_frontend/src/pages/HomePage/components/MarkdownViewer.tsx",
+          "git_blob_sha": "c34a0e5446f3eb17ec7bb3af7f55d6394d8d5e3e",
+          "sha256": "074b68af254a972532f3dd511a8c5c0415a7a609d9ae048161f93cbc7d1a766a"
+        }
+      ],
+      "local_files": [
+        {
+          "path": "frontend/src/components/SafeMarkdown.tsx",
+          "sha256": "03d4cdf75751a2426c52386ebc2ce95d8c78d9fef048d10a5a3656cf2cfb4b20"
+        }
+      ]
     }
   ]
 }
