@@ -32,4 +32,4 @@ class HealthResponse(DocumentModel):
     status: Literal["ok"] = "ok"
     service: Literal["VideoStudyAgent"] = "VideoStudyAgent"
     version: str
-    stage: Annotated[int, Field(ge=1, le=7)] = 3
+    stage: Annotated[int, Field(ge=1, le=7)] = 4

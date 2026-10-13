@@ -20,8 +20,14 @@ class Settings(BaseSettings):
     environment: Literal["local", "test"] = "local"
     data_dir: Path = PROJECT_ROOT / "data"
     llm_api_key: SecretStr | None = Field(default=None, repr=False, exclude=True)
-    llm_base_url: AnyHttpUrl | None = None
-    llm_model: str | None = None
+    llm_base_url: AnyHttpUrl | None = "https://api.deepseek.com"
+    llm_model: str | None = "deepseek-flash"
+    llm_timeout: int = Field(default=60, gt=0)
+    llm_context_tokens: int = Field(default=32768, ge=4096)
+    llm_max_output_tokens: int = Field(default=4096, ge=256, le=16384)
+    llm_max_request_bytes: int = Field(default=131072, ge=4096)
+    llm_max_requests: int = Field(default=100, ge=1, le=1000)
+    llm_total_tokens: int = Field(default=500000, ge=4096)
     asr_model: str = "small"
     asr_device: Literal["cpu", "cuda"] = "cpu"
     asr_compute_type: Literal["int8", "float16", "int8_float16"] = "int8"

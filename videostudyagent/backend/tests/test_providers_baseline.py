@@ -60,7 +60,7 @@ def test_five_repository_baseline_has_all_reuse_entries_and_no_adopted_claims():
     }
     assert len({item.repository for item in baseline.candidates}) == 5
     assert next(item for item in baseline.candidates if item.id == "N1").status == "excluded"
-    assert not (PROJECT_ROOT / "backend/app/vendor").exists()
+    assert not (PROJECT_ROOT / "backend/app/vendor/ai_notes_generator").exists()
 
 
 @pytest.mark.parametrize(

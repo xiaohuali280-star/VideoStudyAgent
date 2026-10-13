@@ -373,7 +373,7 @@
             "maximum": 7.0,
             "minimum": 1.0,
             "title": "Stage",
-            "default": 3
+            "default": 4
           }
         },
         "additionalProperties": false,
@@ -1573,6 +1573,17 @@
             },
             "title": "Tools",
             "type": "array"
+          },
+          "max_output_tokens": {
+            "default": 4096,
+            "exclusiveMinimum": 0,
+            "title": "Max Output Tokens",
+            "type": "integer"
+          },
+          "json_mode": {
+            "default": false,
+            "title": "Json Mode",
+            "type": "boolean"
           }
         },
         "required": [
@@ -1595,6 +1606,18 @@
             },
             "title": "Tool Calls",
             "type": "array"
+          },
+          "input_tokens": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Output Tokens",
+            "type": "integer"
           }
         },
         "title": "ModelReply",

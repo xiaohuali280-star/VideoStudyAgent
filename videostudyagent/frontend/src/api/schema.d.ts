@@ -162,7 +162,7 @@ export interface components {
             version: string;
             /**
              * Stage
-             * @default 3
+             * @default 4
              */
             stage: number;
         };
@@ -657,6 +657,16 @@ export interface components {
             messages: components["schemas"]["ChatMessage"][];
             /** Tools */
             tools?: components["schemas"]["ToolDefinition"][];
+            /**
+             * Max Output Tokens
+             * @default 4096
+             */
+            max_output_tokens: number;
+            /**
+             * Json Mode
+             * @default false
+             */
+            json_mode: boolean;
         };
         /** ModelReply */
         ModelReply: {
@@ -667,6 +677,16 @@ export interface components {
             content: string;
             /** Tool Calls */
             tool_calls?: components["schemas"]["ToolCall"][];
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
         };
     };
     responses: never;

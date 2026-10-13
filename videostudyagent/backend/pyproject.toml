@@ -13,6 +13,7 @@ dependencies = [
   "python-multipart>=0.0.20,<1",
   "srt>=3.5,<4",
   "webvtt-py>=0.5,<1",
+  "httpx>=0.28,<1",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +31,7 @@ pythonpath = ["."]
 addopts = "-ra --basetemp=../.cache/pytest"
 
 [tool.ruff]
+extend-exclude = ["app/vendor", "tests/vendor"]
 target-version = "py312"
 line-length = 100
 

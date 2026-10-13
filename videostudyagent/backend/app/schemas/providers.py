@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import Field, JsonValue
 
-from app.schemas.common import ContractModel, NonEmptyText
+from app.schemas.common import ContractModel, Milliseconds, NonEmptyText, PositiveInt
 
 
 class ToolDefinition(ContractModel):
@@ -27,8 +27,12 @@ class ChatMessage(ContractModel):
 class ModelReply(ContractModel):
     content: str = ""
     tool_calls: list[ToolCall] = Field(default_factory=list)
+    input_tokens: Milliseconds = 0
+    output_tokens: Milliseconds = 0
 
 
 class ModelRequest(ContractModel):
     messages: list[ChatMessage]
     tools: list[ToolDefinition] = Field(default_factory=list)
+    max_output_tokens: PositiveInt = 4096
+    json_mode: bool = False

@@ -36,6 +36,159 @@
         "test_asr_child_timeout_is_controlled",
         "real tiny CPU int8 smoke"
       ]
+    },
+    {
+      "id": "B1",
+      "repository": "JefferyHcool/BiliNote",
+      "commit": "90940fde4d224d0f69ad99674f4af0a1ea52d3c4",
+      "license": "MIT",
+      "status": "adopted",
+      "changes": "Module preserved byte-for-byte; upstream tests change import location only. Project adapter enforces UTF-8 conservative token/byte bounds, reserves output/prompt space and preserves canonical IDs/part order.",
+      "tests": [
+        "tests/vendor/test_request_chunker.py",
+        "test_chunker_obeys_conservative_budget_and_source_ids",
+        "test_long_course_covers_tail_and_preserves_original_parts"
+      ],
+      "sources": [
+        {
+          "path": "backend/app/gpt/request_chunker.py",
+          "git_blob_sha": "7ffc74741f849df00a392ba37e4f3424de22edc5",
+          "sha256": "e76dfe72cb74e6317af52e50cf876a00e00bb6fdbb13919819c251308a0451d3"
+        },
+        {
+          "path": "backend/tests/test_request_chunker.py",
+          "git_blob_sha": "f75732c2ae81049182e571898143af7d88225b46",
+          "sha256": "f989eeebaf3b5c32a65b83c9dbb1cc6d0390ea20d7e00b1f3a0513bd7f30ffac"
+        }
+      ],
+      "local_files": [
+        {
+          "path": "backend/app/vendor/bilinote/request_chunker.py",
+          "sha256": "e76dfe72cb74e6317af52e50cf876a00e00bb6fdbb13919819c251308a0451d3"
+        },
+        {
+          "path": "backend/tests/vendor/test_request_chunker.py",
+          "sha256": "b2818dfa744590ef0b6a26800710eeff8a64460b79064e546aa3c0d9ad1bb0b8"
+        }
+      ]
+    },
+    {
+      "id": "B3",
+      "repository": "JefferyHcool/BiliNote",
+      "commit": "90940fde4d224d0f69ad99674f4af0a1ea52d3c4",
+      "license": "MIT",
+      "status": "adopted",
+      "changes": "Selected note assistant, detail/formula preservation and summary clauses adapted to strict JSON, language options and source coverage. Removed extras, screenshot instructions, links and style expansion.",
+      "tests": [
+        "test_long_course_covers_tail_and_preserves_original_parts",
+        "test_invalid_generation_has_one_repair_only"
+      ],
+      "sources": [
+        {
+          "path": "backend/app/gpt/prompt.py",
+          "git_blob_sha": "f09d25df7e2b3510fa5f218892982fc513fe4ee1",
+          "sha256": "54639349ffdaa6dd05313459a0f9f21823534c4dbf15ce6a8cc114c0e0682201"
+        },
+        {
+          "path": "backend/app/gpt/prompt_builder.py",
+          "git_blob_sha": "78606307872bcec87e20c7f46a912f089debc479",
+          "sha256": "be13479c72b486d49411022678430366e1dfdf4cc8190ef0a6f10e9c060df74e"
+        }
+      ],
+      "local_files": [
+        {
+          "path": "backend/app/prompts/study.py",
+          "sha256": "0ca9970cee93ee1d56fc7a5925a4737bc330f4ba7a7912b5b90b70ba36187174"
+        }
+      ]
+    },
+    {
+      "id": "D1",
+      "repository": "HKUDS/DeepTutor",
+      "commit": "6cf793bd868ba5ecbe64722936d4be8fab5a01df",
+      "license": "Apache-2.0",
+      "status": "adopted",
+      "changes": "Module preserved byte-for-byte; tests change import and attribution header only. Outputs are always subjected to strict Schema and cross-document validation; empty objects never pass.",
+      "tests": [
+        "tests/vendor/test_json_output.py",
+        "test_invalid_generation_has_one_repair_only"
+      ],
+      "sources": [
+        {
+          "path": "deeptutor/agents/_shared/json_output.py",
+          "git_blob_sha": "7c7d101c0ef8b1b710b69bc4bc91f05e4605e07f",
+          "sha256": "b589384e287a8348f9353aedbebd11d943a1ccb59a92bada4ec97db39e76dee9"
+        },
+        {
+          "path": "tests/agents/test_shared_json_output.py",
+          "git_blob_sha": "00af7446ccb818e5966250fe3d9a0af8b65f3af0",
+          "sha256": "35fe48d97cbb9785644e842b639e68c7910e427717fb29bc66aa279d61903a52"
+        }
+      ],
+      "local_files": [
+        {
+          "path": "backend/app/vendor/deeptutor/json_output.py",
+          "sha256": "b589384e287a8348f9353aedbebd11d943a1ccb59a92bada4ec97db39e76dee9"
+        },
+        {
+          "path": "backend/tests/vendor/test_json_output.py",
+          "sha256": "8b12bd63be63bd74c7f09438f6dd46310921a328c0dcc9fc6928d5b7d1ed604e"
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "repository": "HKUDS/DeepTutor",
+      "commit": "6cf793bd868ba5ecbe64722936d4be8fab5a01df",
+      "license": "Apache-2.0",
+      "status": "adopted",
+      "changes": "Retains whitespace normalization with source position mapping. Changed evidence comparison to per-segment matches, preserving numbers/hyphens and numeric boundaries; dynamic short-answer counts, chapter membership and duplicate checks; no 6000-char truncation.",
+      "tests": [
+        "test_grounding_preserves_math_and_negative_numbers",
+        "test_foreign_sources_and_duplicate_questions_are_rejected"
+      ],
+      "sources": [
+        {
+          "path": "deeptutor/reading/_grounding.py",
+          "git_blob_sha": "fc152bd75dd5554c9539579fa7b97d0e827bc25f",
+          "sha256": "2890d7146df08f0ce7a6ce1c243373e9ee9ec03f9672a9e15f52c66403cd6cf8"
+        },
+        {
+          "path": "deeptutor/reading/quiz.py",
+          "git_blob_sha": "e32be31cd2dbcd3c448b50cc9c3d41255eeb30d1",
+          "sha256": "e9e0f43dd6e48684ae3161add288f5748d63e9e4c60b6536e066b1e0eae2b3a1"
+        }
+      ],
+      "local_files": [
+        {
+          "path": "backend/app/adapters/grounding.py",
+          "sha256": "774b3af7c5fb91072c6257b10b005f18b757eda0f3551662e2a2ee931c8997da"
+        }
+      ]
+    },
+    {
+      "id": "T1",
+      "repository": "Milind1904/ai-tutor",
+      "commit": "438e3aa42af58dcba61fa993dd1519ade55aafcc",
+      "license": "MIT",
+      "status": "adopted",
+      "changes": "Three difficulty instruction strings retained; MCQ/Groq/RAG chain excluded. Strict options, short-answer Schema and required answers/explanations replace weak parsing.",
+      "tests": [
+        "test_exact_quiz_shape_and_cached_generation"
+      ],
+      "sources": [
+        {
+          "path": "backend/app/ai_engine/chains/quiz_chain.py",
+          "git_blob_sha": "9ae8f28f75d7bacd1636294077fc245e1f5b62d9",
+          "sha256": "a57aa7c729024e297ce9a28e1d68fff88fa0f92e6ae881982016c7e44f9ddcf7"
+        }
+      ],
+      "local_files": [
+        {
+          "path": "backend/app/prompts/study.py",
+          "sha256": "0ca9970cee93ee1d56fc7a5925a4737bc330f4ba7a7912b5b90b70ba36187174"
+        }
+      ]
     }
   ]
 }

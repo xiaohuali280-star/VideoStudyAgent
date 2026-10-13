@@ -59,6 +59,7 @@ class Transcript(DocumentModel):
 
 
 class ChunkPart(ContractModel):
+    model_config = ConfigDict(str_strip_whitespace=False)
     segment_id: SegmentId
     text: NonEmptyText
     part_index: Milliseconds
