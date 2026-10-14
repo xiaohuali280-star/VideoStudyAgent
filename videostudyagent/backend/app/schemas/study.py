@@ -102,6 +102,10 @@ class NotesDocument(DocumentModel):
         return self
 
 
+class NotesDocumentV11(NotesDocument):
+    schema_version: Literal["1.1"] = "1.1"
+
+
 class SourceEvidence(ContractModel):
     segment_id: SegmentId
     quote: NonEmptyText

@@ -150,6 +150,11 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
                 )
 
             bounded.on_usage = record
+        if request.kind == "revise_notes":
+            from app.services.note_revisions import revise_notes
+
+            await revise_notes(operation, bounded.settings, repository, bounded)
+            return
         if request.kind == "chat_reply":
             from app.services.note_chat import reply_to_notes
 
@@ -196,6 +201,11 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
             raise StudyError("OPERATION_UNAVAILABLE", "此操作尚未接入。", 409)
         if request.kind == "initial_study":
             context = ContextRepository(repository, task.id, repository.artifacts(task.id))
+        context.note_preferences = (
+            getattr(request, "preferences", None).model_dump(mode="json")
+            if getattr(request, "preferences", None)
+            else {}
+        )
         context.quiz_nonce = str(operation.id)
         reader = VersionReader(settings.data_dir)
         context.previous_questions = [
@@ -234,6 +244,7 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
                     operation_id=operation.id,
                     created_at=now(),
                     document_schema_version="1.0",
+                    preferences=request.preferences,
                     **writer.write(task.id, "notes", document),
                 )
             )

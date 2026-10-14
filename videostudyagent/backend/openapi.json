@@ -1027,6 +1027,355 @@
         }
       }
     },
+    "/api/tasks/{task_id}/note-preferences": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Preferences",
+        "operationId": "preferences_api_tasks__task_id__note_preferences_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CourseNotePreferences"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Preferences Api Tasks  Task Id  Note Preferences Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Save Preferences",
+        "operationId": "save_preferences_api_tasks__task_id__note_preferences_put",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseNotePreferences"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/notes-revisions": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Revisions",
+        "operationId": "revisions_api_tasks__task_id__notes_revisions_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotesRevision"
+                  },
+                  "title": "Response Revisions Api Tasks  Task Id  Notes Revisions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/notes-revisions/{revision_id}": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Revision Document",
+        "operationId": "revision_document_api_tasks__task_id__notes_revisions__revision_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Revision Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/NotesDocument"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NotesDocumentV11"
+                    }
+                  ],
+                  "title": "Response Revision Document Api Tasks  Task Id  Notes Revisions  Revision Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/notes-revisions/{revision_id}/apply": {
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Apply Revision",
+        "operationId": "apply_revision_api_tasks__task_id__notes_revisions__revision_id__apply_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Revision Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishNotes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseStudyState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/notes-revisions/{revision_id}/discard": {
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Discard Revision",
+        "operationId": "discard_revision_api_tasks__task_id__notes_revisions__revision_id__discard_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Revision Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesRevision"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -1345,6 +1694,39 @@
           "citations"
         ],
         "title": "ConversationMessage",
+        "type": "object"
+      },
+      "CourseNotePreferences": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "revision": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/NotePreferences"
+          }
+        },
+        "required": [
+          "schema_version",
+          "task_id",
+          "revision",
+          "preferences"
+        ],
+        "title": "CourseNotePreferences",
         "type": "object"
       },
       "CourseStudyState": {
@@ -1934,6 +2316,173 @@
         "title": "NotesDocument",
         "type": "object"
       },
+      "NotesDocumentV11": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "learning_objectives": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "chapters": {
+            "items": {
+              "$ref": "#/components/schemas/NoteChapter"
+            },
+            "minItems": 1,
+            "title": "Chapters",
+            "type": "array"
+          },
+          "key_concepts": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Key Concepts",
+            "type": "array"
+          },
+          "summary": {
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "title",
+          "learning_objectives",
+          "chapters",
+          "key_concepts",
+          "summary"
+        ],
+        "title": "NotesDocumentV11",
+        "type": "object"
+      },
+      "NotesRevision": {
+        "additionalProperties": false,
+        "properties": {
+          "storage_key": {
+            "minLength": 1,
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "transcript_snapshot_id": {
+            "format": "uuid",
+            "title": "Transcript Snapshot Id",
+            "type": "string"
+          },
+          "parent_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parent Revision Id"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Id"
+          },
+          "status": {
+            "default": "draft",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "discarded": {
+            "default": false,
+            "title": "Discarded",
+            "type": "boolean"
+          },
+          "document_schema_version": {
+            "default": "1.1",
+            "enum": [
+              "1.0",
+              "1.1"
+            ],
+            "title": "Document Schema Version",
+            "type": "string"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/NotePreferences"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "storage_key",
+          "sha256",
+          "schema_version",
+          "id",
+          "task_id",
+          "transcript_snapshot_id",
+          "parent_revision_id",
+          "operation_id",
+          "status",
+          "discarded",
+          "document_schema_version",
+          "preferences",
+          "created_at"
+        ],
+        "title": "NotesRevision",
+        "type": "object"
+      },
       "OperationAttempt": {
         "additionalProperties": false,
         "properties": {
@@ -2124,6 +2673,25 @@
         "title": "OperationUsage",
         "type": "object"
       },
+      "PreferencesUpdate": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/NotePreferences-Input"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "preferences"
+        ],
+        "title": "PreferencesUpdate"
+      },
       "ProcessingOptions-Input": {
         "properties": {
           "generate_notes": {
@@ -2210,6 +2778,28 @@
           "export_formats"
         ],
         "title": "PublicConfig"
+      },
+      "PublishNotes": {
+        "properties": {
+          "expected_current_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Current Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_current_id"
+        ],
+        "title": "PublishNotes"
       },
       "Question": {
         "additionalProperties": false,
@@ -3055,10 +3645,14 @@
                 "$ref": "#/components/schemas/NotesDocument"
               },
               {
+                "$ref": "#/components/schemas/NotesDocumentV11"
+              },
+              {
                 "type": "null"
               }
             ],
-            "default": null
+            "default": null,
+            "title": "Notes"
           },
           "quiz": {
             "anyOf": [
@@ -3911,200 +4505,6 @@
           "created_at"
         ],
         "title": "TranscriptSnapshot",
-        "type": "object"
-      },
-      "NotesRevision": {
-        "additionalProperties": false,
-        "properties": {
-          "storage_key": {
-            "minLength": 1,
-            "title": "Storage Key",
-            "type": "string"
-          },
-          "sha256": {
-            "pattern": "^[a-f0-9]{64}$",
-            "title": "Sha256",
-            "type": "string"
-          },
-          "schema_version": {
-            "const": "1.1",
-            "default": "1.1",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "task_id": {
-            "format": "uuid",
-            "title": "Task Id",
-            "type": "string"
-          },
-          "transcript_snapshot_id": {
-            "format": "uuid",
-            "title": "Transcript Snapshot Id",
-            "type": "string"
-          },
-          "parent_revision_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Parent Revision Id"
-          },
-          "operation_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Operation Id"
-          },
-          "status": {
-            "default": "draft",
-            "enum": [
-              "draft",
-              "published"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "document_schema_version": {
-            "default": "1.1",
-            "enum": [
-              "1.0",
-              "1.1"
-            ],
-            "title": "Document Schema Version",
-            "type": "string"
-          },
-          "preferences": {
-            "$ref": "#/components/schemas/NotePreferences"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          }
-        },
-        "required": [
-          "storage_key",
-          "sha256",
-          "schema_version",
-          "id",
-          "task_id",
-          "transcript_snapshot_id",
-          "parent_revision_id",
-          "operation_id",
-          "status",
-          "document_schema_version",
-          "preferences",
-          "created_at"
-        ],
-        "title": "NotesRevision",
-        "type": "object"
-      },
-      "CourseNotePreferences": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.1",
-            "default": "1.1",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "task_id": {
-            "format": "uuid",
-            "title": "Task Id",
-            "type": "string"
-          },
-          "revision": {
-            "default": 1,
-            "exclusiveMinimum": 0,
-            "title": "Revision",
-            "type": "integer"
-          },
-          "preferences": {
-            "$ref": "#/components/schemas/NotePreferences"
-          }
-        },
-        "required": [
-          "schema_version",
-          "task_id",
-          "revision",
-          "preferences"
-        ],
-        "title": "CourseNotePreferences",
-        "type": "object"
-      },
-      "NotesDocumentV11": {
-        "additionalProperties": false,
-        "properties": {
-          "schema_version": {
-            "const": "1.1",
-            "default": "1.1",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "title": {
-            "minLength": 1,
-            "title": "Title",
-            "type": "string"
-          },
-          "learning_objectives": {
-            "items": {
-              "minLength": 1,
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Learning Objectives",
-            "type": "array"
-          },
-          "chapters": {
-            "items": {
-              "$ref": "#/components/schemas/NoteChapter"
-            },
-            "minItems": 1,
-            "title": "Chapters",
-            "type": "array"
-          },
-          "key_concepts": {
-            "items": {
-              "minLength": 1,
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Key Concepts",
-            "type": "array"
-          },
-          "summary": {
-            "minLength": 1,
-            "title": "Summary",
-            "type": "string"
-          }
-        },
-        "required": [
-          "schema_version",
-          "title",
-          "learning_objectives",
-          "chapters",
-          "key_concepts",
-          "summary"
-        ],
-        "title": "NotesDocumentV11",
         "type": "object"
       },
       "ChunkPart": {

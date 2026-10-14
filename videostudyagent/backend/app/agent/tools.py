@@ -10,9 +10,10 @@ from app.db.repository import now
 from app.schemas.common import ContractModel, ErrorInfo
 from app.schemas.iteration import ProcessingOptions
 from app.schemas.providers import ToolCall, ToolDefinition
-from app.schemas.study import NotesDocument, Transcript
+from app.schemas.study import Transcript
 from app.schemas.tasks import TaskStep
 from app.services.generation import GenerationService
+from app.services.note_documents import NoteReader
 from app.services.quiz_documents import QuizReader
 from app.services.transcription import TranscriptService
 
@@ -82,7 +83,7 @@ class StudyTools:
         for kind, schema in [
             ("audio", None),
             ("transcript", Transcript),
-            ("notes", NotesDocument),
+            ("notes", NoteReader),
             ("quiz", QuizReader),
         ]:
             if kind not in stored:

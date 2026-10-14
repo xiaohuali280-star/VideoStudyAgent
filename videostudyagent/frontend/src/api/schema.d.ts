@@ -262,6 +262,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/{task_id}/note-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preferences */
+        get: operations["preferences_api_tasks__task_id__note_preferences_get"];
+        /** Save Preferences */
+        put: operations["save_preferences_api_tasks__task_id__note_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/notes-revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revisions */
+        get: operations["revisions_api_tasks__task_id__notes_revisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/notes-revisions/{revision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revision Document */
+        get: operations["revision_document_api_tasks__task_id__notes_revisions__revision_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/notes-revisions/{revision_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Revision */
+        post: operations["apply_revision_api_tasks__task_id__notes_revisions__revision_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/notes-revisions/{revision_id}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discard Revision */
+        post: operations["discard_revision_api_tasks__task_id__notes_revisions__revision_id__discard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -452,6 +538,26 @@ export interface components {
             created_at: string;
             /** Citations */
             citations: components["schemas"]["SourceEvidence"][];
+        };
+        /** CourseNotePreferences */
+        CourseNotePreferences: {
+            /**
+             * Schema Version
+             * @default 1.1
+             * @constant
+             */
+            schema_version: "1.1";
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Revision
+             * @default 1
+             */
+            revision: number;
+            preferences: components["schemas"]["NotePreferences"];
         };
         /** CourseStudyState */
         CourseStudyState: {
@@ -736,6 +842,86 @@ export interface components {
             /** Summary */
             summary: string;
         };
+        /** NotesDocumentV11 */
+        NotesDocumentV11: {
+            /**
+             * Schema Version
+             * @default 1.1
+             * @constant
+             */
+            schema_version: "1.1";
+            /** Title */
+            title: string;
+            /** Learning Objectives */
+            learning_objectives: string[];
+            /** Chapters */
+            chapters: components["schemas"]["NoteChapter"][];
+            /** Key Concepts */
+            key_concepts: string[];
+            /** Summary */
+            summary: string;
+        };
+        /** NotesRevision */
+        NotesRevision: {
+            /** Storage Key */
+            storage_key: string;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Schema Version
+             * @default 1.1
+             * @constant
+             */
+            schema_version: "1.1";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Transcript Snapshot Id
+             * Format: uuid
+             */
+            transcript_snapshot_id: string;
+            /**
+             * Parent Revision Id
+             * @default null
+             */
+            parent_revision_id: string | null;
+            /**
+             * Operation Id
+             * @default null
+             */
+            operation_id: string | null;
+            /**
+             * Status
+             * @default draft
+             * @enum {string}
+             */
+            status: "draft" | "published";
+            /**
+             * Discarded
+             * @default false
+             */
+            discarded: boolean;
+            /**
+             * Document Schema Version
+             * @default 1.1
+             * @enum {string}
+             */
+            document_schema_version: "1.0" | "1.1";
+            preferences: components["schemas"]["NotePreferences"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** OperationAttempt */
         OperationAttempt: {
             /** Attempt */
@@ -815,6 +1001,12 @@ export interface components {
              */
             output_tokens: number | null;
         };
+        /** PreferencesUpdate */
+        PreferencesUpdate: {
+            /** Expected Revision */
+            expected_revision: number;
+            preferences: components["schemas"]["NotePreferences-Input"];
+        };
         /** ProcessingOptions */
         "ProcessingOptions-Input": {
             /**
@@ -857,6 +1049,11 @@ export interface components {
             max_duration_ms: number;
             /** Export Formats */
             export_formats: ("notes.md" | "quiz.md" | "quiz.json" | "transcript.json" | "transcript.srt")[];
+        };
+        /** PublishNotes */
+        PublishNotes: {
+            /** Expected Current Id */
+            expected_current_id: string | null;
         };
         /** Question */
         Question: {
@@ -1236,8 +1433,11 @@ export interface components {
             available_artifacts: components["schemas"]["ArtifactSummary"][];
             /** @default null */
             transcript: components["schemas"]["Transcript"] | null;
-            /** @default null */
-            notes: components["schemas"]["NotesDocument"] | null;
+            /**
+             * Notes
+             * @default null
+             */
+            notes: components["schemas"]["NotesDocument"] | components["schemas"]["NotesDocumentV11"] | null;
             /**
              * Quiz
              * @default null
@@ -1611,101 +1811,6 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
-        };
-        /** NotesRevision */
-        NotesRevision: {
-            /** Storage Key */
-            storage_key: string;
-            /** Sha256 */
-            sha256: string;
-            /**
-             * Schema Version
-             * @default 1.1
-             * @constant
-             */
-            schema_version: "1.1";
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Task Id
-             * Format: uuid
-             */
-            task_id: string;
-            /**
-             * Transcript Snapshot Id
-             * Format: uuid
-             */
-            transcript_snapshot_id: string;
-            /**
-             * Parent Revision Id
-             * @default null
-             */
-            parent_revision_id: string | null;
-            /**
-             * Operation Id
-             * @default null
-             */
-            operation_id: string | null;
-            /**
-             * Status
-             * @default draft
-             * @enum {string}
-             */
-            status: "draft" | "published";
-            /**
-             * Document Schema Version
-             * @default 1.1
-             * @enum {string}
-             */
-            document_schema_version: "1.0" | "1.1";
-            preferences: components["schemas"]["NotePreferences"];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** CourseNotePreferences */
-        CourseNotePreferences: {
-            /**
-             * Schema Version
-             * @default 1.1
-             * @constant
-             */
-            schema_version: "1.1";
-            /**
-             * Task Id
-             * Format: uuid
-             */
-            task_id: string;
-            /**
-             * Revision
-             * @default 1
-             */
-            revision: number;
-            preferences: components["schemas"]["NotePreferences"];
-        };
-        /** NotesDocumentV11 */
-        NotesDocumentV11: {
-            /**
-             * Schema Version
-             * @default 1.1
-             * @constant
-             */
-            schema_version: "1.1";
-            /** Title */
-            title: string;
-            /** Learning Objectives */
-            learning_objectives: string[];
-            /** Chapters */
-            chapters: components["schemas"]["NoteChapter"][];
-            /** Key Concepts */
-            key_concepts: string[];
-            /** Summary */
-            summary: string;
         };
         /** ChunkPart */
         ChunkPart: {
@@ -2517,6 +2622,206 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConversationMessage"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preferences_api_tasks__task_id__note_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseNotePreferences"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_preferences_api_tasks__task_id__note_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseNotePreferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revisions_api_tasks__task_id__notes_revisions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesRevision"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revision_document_api_tasks__task_id__notes_revisions__revision_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesDocument"] | components["schemas"]["NotesDocumentV11"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_revision_api_tasks__task_id__notes_revisions__revision_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishNotes"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseStudyState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_revision_api_tasks__task_id__notes_revisions__revision_id__discard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesRevision"];
                 };
             };
             /** @description Validation Error */

@@ -78,7 +78,7 @@
       "commit": "90940fde4d224d0f69ad99674f4af0a1ea52d3c4",
       "license": "MIT",
       "status": "adopted",
-      "changes": "Selected note assistant, detail/formula preservation and summary clauses adapted to strict JSON, language options and source coverage. Removed extras, screenshot instructions, links and style expansion.",
+      "changes": "Selected note assistant, detail/formula preservation and summary clauses adapted to strict JSON, language options and source coverage. Removed extras, screenshot instructions, links and style expansion. Stage 13: course-scoped presentation preferences supplied as untrusted data, with facts and source constraints retained; prompt version bumped.",
       "tests": [
         "test_long_course_covers_tail_and_preserves_original_parts",
         "test_invalid_generation_has_one_repair_only"
@@ -98,7 +98,7 @@
       "local_files": [
         {
           "path": "backend/app/prompts/study.py",
-          "sha256": "0ca9970cee93ee1d56fc7a5925a4737bc330f4ba7a7912b5b90b70ba36187174"
+          "sha256": "4ce1531210ebee7a6d706b6738b7c6e6b04e704948dd28cc064b52d755a63cf4"
         }
       ]
     },
@@ -172,7 +172,7 @@
       "commit": "438e3aa42af58dcba61fa993dd1519ade55aafcc",
       "license": "MIT",
       "status": "adopted",
-      "changes": "Three difficulty instruction strings retained; MCQ/Groq/RAG chain excluded. Strict options, short-answer Schema and required answers/explanations replace weak parsing.",
+      "changes": "Three difficulty instruction strings retained; MCQ/Groq/RAG chain excluded. Strict options, short-answer Schema and required answers/explanations replace weak parsing. Stage 13: course-scoped presentation preferences supplied as untrusted data, with facts and source constraints retained; prompt version bumped.",
       "tests": [
         "test_exact_quiz_shape_and_cached_generation"
       ],
@@ -186,7 +186,7 @@
       "local_files": [
         {
           "path": "backend/app/prompts/study.py",
-          "sha256": "0ca9970cee93ee1d56fc7a5925a4737bc330f4ba7a7912b5b90b70ba36187174"
+          "sha256": "4ce1531210ebee7a6d706b6738b7c6e6b04e704948dd28cc064b52d755a63cf4"
         }
       ]
     },

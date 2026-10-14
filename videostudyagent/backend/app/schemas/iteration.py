@@ -9,7 +9,7 @@ from app.schemas.common import ContentHash, ContractModel, ErrorInfo, PositiveIn
 from app.schemas.study import (
     Difficulty,
     LanguageCode,
-    NotesDocument,
+    NotesDocumentV11,
     QuizDocumentV11,
     SourceEvidence,
     StudyOptions,
@@ -165,6 +165,7 @@ class NotesRevision(IterationDocument, StoredObject):
     parent_revision_id: UUID | None = None
     operation_id: UUID | None = None
     status: Literal["draft", "published"] = "draft"
+    discarded: StrictBool = False
     document_schema_version: Literal["1.0", "1.1"] = "1.1"
     preferences: NotePreferences = Field(default_factory=NotePreferences)
     created_at: AwareDatetime
@@ -228,10 +229,6 @@ class ConversationMessage(IterationDocument):
         if self.role == "user" and len(self.content) > 2000:
             raise ValueError("User messages are limited to 2000 characters")
         return self
-
-
-class NotesDocumentV11(NotesDocument):
-    schema_version: Literal["1.1"] = "1.1"
 
 
 ITERATION_CONTRACTS = (

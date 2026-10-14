@@ -13,7 +13,14 @@ from app.schemas.common import (
     NonEmptyText,
     PositiveInt,
 )
-from app.schemas.study import NotesDocument, QuizDocument, QuizDocumentV11, StudyOptions, Transcript
+from app.schemas.study import (
+    NotesDocument,
+    NotesDocumentV11,
+    QuizDocument,
+    QuizDocumentV11,
+    StudyOptions,
+    Transcript,
+)
 
 TaskStatus = Literal["queued", "running", "succeeded", "failed"]
 StepStatus = Literal["pending", "running", "succeeded", "failed", "skipped"]
@@ -125,5 +132,5 @@ class StudyResult(DocumentModel):
     task_id: UUID
     available_artifacts: list[ArtifactSummary] = Field(default_factory=list)
     transcript: Transcript | None = None
-    notes: NotesDocument | None = None
+    notes: NotesDocument | NotesDocumentV11 | None = None
     quiz: QuizDocument | QuizDocumentV11 | None = None

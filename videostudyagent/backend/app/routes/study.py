@@ -55,9 +55,13 @@ def submit(
     action: OperationRequest,
     idempotency_key: str = Header(min_length=1, max_length=200),
 ):
-    if action.kind not in {"generate_notes", "generate_quiz", "chat_reply"}:
+    if action.kind not in {"generate_notes", "generate_quiz", "chat_reply", "revise_notes"}:
         raise StudyError("OPERATION_UNAVAILABLE", "此入口仅支持补生成笔记或自测。", 422)
     repo = study_repository(request)
+    if action.kind == "revise_notes":
+        from app.services.note_revisions import revision_context
+
+        revision_context(repo, VersionReader(request.app.state.settings.data_dir), task_id, action)
     if action.kind == "chat_reply":
         from app.services.note_chat import chat_context
 

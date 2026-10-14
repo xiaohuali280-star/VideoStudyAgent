@@ -559,6 +559,8 @@ class StudyRepository:
                 or state.transcript_snapshot_id != revision.transcript_snapshot_id
             ):
                 raise conflict("笔记或字幕版本已变化，请重新核对。")
+            if revision.discarded:
+                raise conflict("草稿已放弃，不能应用。")
             if revision.status == "draft" and revision.parent_revision_id != expected:
                 raise conflict("草稿的基准版本已变化。")
             if revision.status == "draft":
@@ -573,6 +575,21 @@ class StudyRepository:
             )
             self._save_state(connection, state)
             return state
+
+    def discard_notes(self, task_id, revision_id):
+        with self._write() as connection:
+            revision = self._owned(
+                connection, NotesRevisionRow, NotesRevision, task_id, revision_id
+            )
+            if revision.status != "draft":
+                raise conflict("只能放弃未应用草稿。")
+            revision.discarded = True
+            connection.execute(
+                update(NotesRevisionRow)
+                .where(NotesRevisionRow.id == str(revision.id))
+                .values(payload=revision.model_dump(mode="json"))
+            )
+            return revision
 
     def publish_batch(self, task_id, batch_id, *, expected_current_id):
         with self._write() as connection:

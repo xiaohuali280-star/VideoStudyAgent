@@ -15,6 +15,7 @@ from app.schemas.providers import ChatMessage, ModelRequest
 from app.schemas.study import NotesDocument, QuizDocument, QuizDocumentV11, QuizPartV11, Transcript
 from app.schemas.tasks import Task
 from app.services.checkpoints import NoteCheckpoints
+from app.services.note_documents import NoteReader
 from app.services.storage import ArtifactStore, cache_key
 from app.vendor.deeptutor.json_output import extract_json_object
 
@@ -62,6 +63,7 @@ class GenerationService:
 
     def _note_data(self, task, segments):
         return {
+            "preferences": getattr(self.repository, "note_preferences", {}),
             "title": task.title,
             "output_language": task.options.output_language,
             "segments": [
@@ -113,7 +115,8 @@ class GenerationService:
         source = self._artifact(task, "transcript")
         transcript = self.store.read_json(source, Transcript)
         key = cache_key(
-            tool="notes-v1",
+            tool="notes-v2",
+            preferences=getattr(self.repository, "note_preferences", {}),
             transcript=source.sha256,
             title=task.title,
             language=task.options.output_language,
@@ -184,7 +187,7 @@ class GenerationService:
             (a for a in self.repository.artifacts(task.id) if a.kind == "notes"), None
         )
         transcript = self.store.read_json(source, Transcript)
-        notes = self.store.read_json(note_artifact, NotesDocument) if note_artifact else None
+        notes = self.store.read_json(note_artifact, NoteReader) if note_artifact else None
         if notes:
             validate_notes(notes, transcript)
         from app.services.quiz_documents import QuizReader
