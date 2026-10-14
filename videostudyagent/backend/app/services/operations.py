@@ -150,6 +150,11 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
                 )
 
             bounded.on_usage = record
+        if request.kind == "chat_reply":
+            from app.services.note_chat import reply_to_notes
+
+            await reply_to_notes(operation, bounded.settings, repository, bounded)
+            return
         if operation.legacy_options is not None:
             raise StudyError(
                 "LEGACY_ACTION_REQUIRED", "旧待处理任务请重新确认生成选项后提交。", 409, True

@@ -41,6 +41,17 @@ class ScriptedStudyModel:
             )
         payload = json.loads(request.messages[1].content)
         data = payload["course_data"]
+        if payload["schema"]["title"] == "ChatAnswer":
+            segment = data["segments"][0]
+            return ModelReply(
+                content=json.dumps(
+                    {
+                        "answer_markdown": "根据所选章节：" + segment["text"],
+                        "citations": [{"segment_id": segment["id"], "quote": segment["text"][:80]}],
+                    },
+                    ensure_ascii=False,
+                )
+            )
         if payload["schema"]["title"] == "NotesDocument":
             result = {
                 "title": data["title"],

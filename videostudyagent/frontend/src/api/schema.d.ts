@@ -227,6 +227,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/{task_id}/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conversations */
+        get: operations["conversations_api_tasks__task_id__conversations_get"];
+        put?: never;
+        /** Create Conversation */
+        post: operations["create_conversation_api_tasks__task_id__conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conversation Messages */
+        get: operations["conversation_messages_api_tasks__task_id__conversations__conversation_id__messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -338,6 +373,85 @@ export interface components {
             chapter_ids: string[];
             /** Message */
             message: string;
+        };
+        /** Conversation */
+        Conversation: {
+            /**
+             * Schema Version
+             * @default 1.1
+             * @constant
+             */
+            schema_version: "1.1";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ConversationMessage */
+        ConversationMessage: {
+            /**
+             * Schema Version
+             * @default 1.1
+             * @constant
+             */
+            schema_version: "1.1";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * Client Message Id
+             * Format: uuid
+             */
+            client_message_id: string;
+            /** Sequence */
+            sequence: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Content */
+            content: string;
+            /**
+             * Notes Revision Id
+             * Format: uuid
+             */
+            notes_revision_id: string;
+            /**
+             * Operation Id
+             * @default null
+             */
+            operation_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Citations */
+            citations: components["schemas"]["SourceEvidence"][];
         };
         /** CourseStudyState */
         CourseStudyState: {
@@ -1574,85 +1688,6 @@ export interface components {
             revision: number;
             preferences: components["schemas"]["NotePreferences"];
         };
-        /** Conversation */
-        Conversation: {
-            /**
-             * Schema Version
-             * @default 1.1
-             * @constant
-             */
-            schema_version: "1.1";
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Task Id
-             * Format: uuid
-             */
-            task_id: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** ConversationMessage */
-        ConversationMessage: {
-            /**
-             * Schema Version
-             * @default 1.1
-             * @constant
-             */
-            schema_version: "1.1";
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Task Id
-             * Format: uuid
-             */
-            task_id: string;
-            /**
-             * Conversation Id
-             * Format: uuid
-             */
-            conversation_id: string;
-            /**
-             * Client Message Id
-             * Format: uuid
-             */
-            client_message_id: string;
-            /** Sequence */
-            sequence: number;
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "user" | "assistant";
-            /** Content */
-            content: string;
-            /**
-             * Notes Revision Id
-             * Format: uuid
-             */
-            notes_revision_id: string;
-            /**
-             * Operation Id
-             * @default null
-             */
-            operation_id: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Citations */
-            citations: components["schemas"]["SourceEvidence"][];
-        };
         /** NotesDocumentV11 */
         NotesDocumentV11: {
             /**
@@ -2385,6 +2420,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudyOperation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conversations_api_tasks__task_id__conversations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_conversation_api_tasks__task_id__conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conversation_messages_api_tasks__task_id__conversations__conversation_id__messages_get: {
+        parameters: {
+            query?: {
+                after_sequence?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationMessage"][];
                 };
             };
             /** @description Validation Error */

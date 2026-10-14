@@ -622,6 +622,18 @@ class StudyRepository:
             )
             return CourseNotePreferences.model_validate(payload) if payload else None
 
+    def conversations(self, task_id):
+        with self.engine.connect() as connection:
+            self._course(connection, task_id)
+            return [
+                Conversation.model_validate(p)
+                for p in connection.scalars(
+                    select(ConversationRow.payload)
+                    .where(ConversationRow.task_id == str(task_id))
+                    .order_by(ConversationRow.id)
+                )
+            ]
+
     def create_conversation(self, task_id):
         record = Conversation(id=uuid4(), task_id=task_id, created_at=now())
         with self._write() as connection:

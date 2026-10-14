@@ -3,6 +3,7 @@ import { downloadExport, friendlyError, retryTask, videoURL } from "../api/clien
 import type { ExportFormat } from "../api/client";
 import { useTask } from "../hooks/useTask";
 import NotesViewer from "./NotesViewer";
+import NoteChat from "./NoteChat";
 import QuizViewer from "./QuizViewer";
 import { clock } from "./Sources";
 import StudyActions from "./StudyActions";
@@ -56,7 +57,7 @@ export default function TaskView({ id, onUpdated }: { id: string; onUpdated: () 
     {hasVideo && <div className="video-wrap"><video ref={video} controls preload="metadata" src={videoURL(id)} onError={() => setVideoError(true)} aria-label="课程视频" />{videoError && <p className="muted">视频暂时无法播放，仍可阅读已生成的学习资料。</p>}</div>}
     <div className="result-toolbar"><div className="result-tabs" role="tablist" aria-label="学习资料">{[["notes", "课程笔记"], ["quiz", "自测练习"], ["transcript", "课程字幕"]].map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => setTab(value)}>{label}</button>)}</div></div>
     <div className="result-content" role="tabpanel" aria-label={{ notes: "课程笔记", quiz: "自测练习", transcript: "课程字幕" }[tab]}>
-      {tab === "notes" && (result?.notes ? <NotesViewer notes={result.notes} transcript={result.transcript} onSeek={seek} /> : <p className="empty-result">笔记会在整理完成后出现在这里。</p>)}
+      {tab === "notes" && (result?.notes ? <><NotesViewer notes={result.notes} transcript={result.transcript} onSeek={seek} /><NoteChat key={result.notes.chapters.map(c => c.id).join("-")} id={id} notes={result.notes} transcript={result.transcript} onSeek={seek} /></> : <p className="empty-result">笔记会在整理完成后出现在这里。</p>)}
       {tab === "quiz" && <QuizBatches id={id} language={task.options.output_language} difficulty={task.options.difficulty} onSelected={(quiz, selected) => { setSelectedQuiz(quiz); setBatchId(selected); }} />}
       {tab === "quiz" && (selectedQuiz || result?.quiz ? <QuizViewer key={batchId} quiz={(selectedQuiz || result!.quiz)!} transcript={result?.transcript} onSeek={seek} /> : <p className="empty-result">自测题会在生成完成后出现在这里。</p>)}
       {tab === "transcript" && (result?.transcript ? <ol className="transcript-list">{result.transcript.segments.map(segment => <li key={segment.id}>{seek ? <button className="timecode" type="button" onClick={() => seek(segment.start_ms)}>{clock(segment.start_ms)}–{clock(segment.end_ms)}</button> : <span className="timecode">{clock(segment.start_ms)}–{clock(segment.end_ms)}</span>}<p>{segment.text}</p></li>)}</ol> : <p className="empty-result">课程字幕尚未准备好。</p>)}

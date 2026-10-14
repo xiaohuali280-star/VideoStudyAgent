@@ -7,6 +7,8 @@ from app.api import repository
 from app.core.errors import StudyError
 from app.db.study_repository import StudyRepository
 from app.schemas.iteration import (
+    Conversation,
+    ConversationMessage,
     CourseStudyState,
     OperationRequest,
     OperationUsage,
@@ -53,10 +55,14 @@ def submit(
     action: OperationRequest,
     idempotency_key: str = Header(min_length=1, max_length=200),
 ):
-    if action.kind not in {"generate_notes", "generate_quiz"}:
+    if action.kind not in {"generate_notes", "generate_quiz", "chat_reply"}:
         raise StudyError("OPERATION_UNAVAILABLE", "此入口仅支持补生成笔记或自测。", 422)
     repo = study_repository(request)
-    return repo.enqueue(
+    if action.kind == "chat_reply":
+        from app.services.note_chat import chat_context
+
+        chat_context(repo, VersionReader(request.app.state.settings.data_dir), task_id, action)
+    operation = repo.enqueue(
         task_id,
         TypeAdapter(OperationRequest).validate_python(action),
         idempotency_key,
@@ -65,6 +71,12 @@ def submit(
             token_limit=request.app.state.settings.llm_total_tokens,
         ),
     )
+
+    if action.kind == "chat_reply":
+        from app.services.note_chat import user_message
+
+        user_message(repo, operation)
+    return operation
 
 
 @router.get("/{task_id}/quiz-batches", response_model=list[QuizBatch])
@@ -96,3 +108,28 @@ def retry_operation(request: Request, task_id: UUID, operation_id: UUID):
 @router.post("/{task_id}/operations/{operation_id}/cancel", response_model=StudyOperation)
 def cancel_operation(request: Request, task_id: UUID, operation_id: UUID):
     return study_repository(request).request_cancel(task_id, operation_id)
+
+
+@router.get("/{task_id}/conversations", response_model=list[Conversation])
+def conversations(request: Request, task_id: UUID):
+    return study_repository(request).conversations(task_id)
+
+
+@router.post("/{task_id}/conversations", response_model=Conversation, status_code=201)
+def create_conversation(request: Request, task_id: UUID):
+    return study_repository(request).create_conversation(task_id)
+
+
+@router.get(
+    "/{task_id}/conversations/{conversation_id}/messages", response_model=list[ConversationMessage]
+)
+def conversation_messages(
+    request: Request,
+    task_id: UUID,
+    conversation_id: UUID,
+    after_sequence: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+):
+    return study_repository(request).messages(
+        task_id, conversation_id, after_sequence=after_sequence, limit=limit
+    )
