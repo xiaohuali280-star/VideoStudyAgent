@@ -268,6 +268,40 @@
               "type": "string",
               "title": "Format"
             }
+          },
+          {
+            "name": "quiz_batch_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Quiz Batch Id"
+            }
+          },
+          {
+            "name": "notes_revision_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Notes Revision Id"
+            }
           }
         ],
         "responses": {
@@ -548,6 +582,137 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StudyOperation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/quiz-batches": {
+      "get": {
+        "tags": [
+          "study"
+        ],
+        "summary": "Batches",
+        "operationId": "batches_api_tasks__task_id__quiz_batches_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuizBatch"
+                  },
+                  "title": "Response Batches Api Tasks  Task Id  Quiz Batches Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/quiz-batches/{batch_id}": {
+      "get": {
+        "tags": [
+          "study"
+        ],
+        "summary": "Batch Document",
+        "operationId": "batch_document_api_tasks__task_id__quiz_batches__batch_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/QuizDocument"
+                    },
+                    {
+                      "$ref": "#/components/schemas/QuizDocumentV11"
+                    }
+                  ],
+                  "title": "Response Batch Document Api Tasks  Task Id  Quiz Batches  Batch Id  Get"
                 }
               }
             }
@@ -1786,6 +1951,127 @@
           "evidence"
         ],
         "title": "QuestionV11",
+        "type": "object"
+      },
+      "QuizBatch": {
+        "additionalProperties": false,
+        "properties": {
+          "storage_key": {
+            "minLength": 1,
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "transcript_snapshot_id": {
+            "format": "uuid",
+            "title": "Transcript Snapshot Id",
+            "type": "string"
+          },
+          "notes_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes Revision Id"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Id"
+          },
+          "sequence": {
+            "exclusiveMinimum": 0,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "nonce": {
+            "format": "uuid",
+            "title": "Nonce",
+            "type": "string"
+          },
+          "question_count": {
+            "default": 5,
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "default": "medium",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "document_schema_version": {
+            "default": "1.1",
+            "enum": [
+              "1.0",
+              "1.1"
+            ],
+            "title": "Document Schema Version",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "storage_key",
+          "sha256",
+          "schema_version",
+          "id",
+          "task_id",
+          "transcript_snapshot_id",
+          "notes_revision_id",
+          "operation_id",
+          "sequence",
+          "nonce",
+          "question_count",
+          "difficulty",
+          "document_schema_version",
+          "created_at"
+        ],
+        "title": "QuizBatch",
         "type": "object"
       },
       "QuizDocument": {
@@ -3301,127 +3587,6 @@
           "created_at"
         ],
         "title": "NotesRevision",
-        "type": "object"
-      },
-      "QuizBatch": {
-        "additionalProperties": false,
-        "properties": {
-          "storage_key": {
-            "minLength": 1,
-            "title": "Storage Key",
-            "type": "string"
-          },
-          "sha256": {
-            "pattern": "^[a-f0-9]{64}$",
-            "title": "Sha256",
-            "type": "string"
-          },
-          "schema_version": {
-            "const": "1.1",
-            "default": "1.1",
-            "title": "Schema Version",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "task_id": {
-            "format": "uuid",
-            "title": "Task Id",
-            "type": "string"
-          },
-          "transcript_snapshot_id": {
-            "format": "uuid",
-            "title": "Transcript Snapshot Id",
-            "type": "string"
-          },
-          "notes_revision_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Notes Revision Id"
-          },
-          "operation_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Operation Id"
-          },
-          "sequence": {
-            "exclusiveMinimum": 0,
-            "title": "Sequence",
-            "type": "integer"
-          },
-          "nonce": {
-            "format": "uuid",
-            "title": "Nonce",
-            "type": "string"
-          },
-          "question_count": {
-            "default": 5,
-            "maximum": 20,
-            "minimum": 1,
-            "title": "Question Count",
-            "type": "integer"
-          },
-          "difficulty": {
-            "default": "medium",
-            "enum": [
-              "easy",
-              "medium",
-              "hard"
-            ],
-            "title": "Difficulty",
-            "type": "string"
-          },
-          "document_schema_version": {
-            "default": "1.1",
-            "enum": [
-              "1.0",
-              "1.1"
-            ],
-            "title": "Document Schema Version",
-            "type": "string"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          }
-        },
-        "required": [
-          "storage_key",
-          "sha256",
-          "schema_version",
-          "id",
-          "task_id",
-          "transcript_snapshot_id",
-          "notes_revision_id",
-          "operation_id",
-          "sequence",
-          "nonce",
-          "question_count",
-          "difficulty",
-          "document_schema_version",
-          "created_at"
-        ],
-        "title": "QuizBatch",
         "type": "object"
       },
       "CourseNotePreferences": {

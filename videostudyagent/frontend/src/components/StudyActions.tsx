@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { friendlyError, getOperations, getStudyState, submitOperation } from "../api/client";
 import type { CourseStudyState, StudyOperation } from "../api/client";
 
-export default function StudyActions({ id, onCompleted }: { id: string; onCompleted: () => void }) {
+export default function StudyActions({ id, onCompleted, options }: { id: string; onCompleted: () => void; options: { difficulty: "easy" | "medium" | "hard"; output_language: string } }) {
   const [state, setState] = useState<CourseStudyState>();
   const [operations, setOperations] = useState<StudyOperation[]>([]);
   const [error, setError] = useState(""), [sending, setSending] = useState(false);
@@ -28,7 +28,7 @@ export default function StudyActions({ id, onCompleted }: { id: string; onComple
     setSending(true); setError("");
     try {
       const action = { kind, transcript_snapshot_id: state.transcript_snapshot_id,
-        ...(kind === "generate_quiz" ? { notes_revision_id: state.notes_revision_id, options: { question_count: 5, difficulty: "medium", output_language: "zh-CN" } } : { output_language: "zh-CN", preferences: { detail: "standard", style: "outline", include_examples: false, highlight_formulas: true, focus_topics: [], custom_instructions: "" } }) } as StudyOperation["request"];
+        ...(kind === "generate_quiz" ? { notes_revision_id: state.notes_revision_id, options: { question_count: 5, difficulty: options.difficulty, output_language: options.output_language } } : { output_language: options.output_language, preferences: { detail: "standard", style: "outline", include_examples: false, highlight_formulas: true, focus_topics: [], custom_instructions: "" } }) } as StudyOperation["request"];
       const op = await submitOperation(id, action);
       setOperations(ops => [op, ...ops]); previous.current.set(op.id, "queued");
     } catch (failure) { setError(friendlyError(failure)); }

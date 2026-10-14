@@ -164,11 +164,31 @@ class ResultService:
             ],
         )
 
-    def export(self, task_id, format: str) -> Path:
+    def export(self, task_id, format: str, quiz_batch_id=None, notes_revision_id=None) -> Path:
         if format not in FORMATS:
             raise StudyError("NOT_FOUND", "未找到该导出格式。", 404)
         task = self.repository.get(task_id)
         result = self.result(task_id)
+        selection = quiz_batch_id or notes_revision_id
+        if selection:
+            study = StudyRepository(self.repository.engine)
+            reader = VersionReader(self.store.root)
+            record = (
+                study.batch(task_id, quiz_batch_id)
+                if quiz_batch_id
+                else study.notes(task_id, notes_revision_id)
+            )
+            transcript = reader.transcript(study.snapshot(task_id, record.transcript_snapshot_id))
+            result = result.model_copy(
+                update={
+                    "transcript": transcript,
+                    **(
+                        {"quiz": reader.quiz(record)}
+                        if quiz_batch_id
+                        else {"notes": reader.notes(record)}
+                    ),
+                }
+            )
         required = (
             "notes"
             if format == "notes.md"
@@ -194,7 +214,7 @@ class ResultService:
                 )
                 + "\n"
             )
-        path = self.store.path(f"tasks/{task.id}/exports/{format}")
+        path = self.store.path(f"tasks/{task.id}/exports/{selection or 'current'}/{format}")
         path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(dir=path.parent, suffix=".tmp", delete=False) as output:
             temporary = Path(output.name)

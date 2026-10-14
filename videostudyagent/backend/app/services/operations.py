@@ -151,6 +151,15 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
             task = task.model_copy(update={"options": options})
         else:
             raise StudyError("OPERATION_UNAVAILABLE", "此操作尚未接入。", 409)
+        if request.kind == "initial_study":
+            context = ContextRepository(repository, task.id, repository.artifacts(task.id))
+        context.quiz_nonce = str(operation.id)
+        reader = VersionReader(settings.data_dir)
+        context.previous_questions = [
+            q.question
+            for batch in repo.quiz_batches(task.id, limit=100)
+            for q in reader.quiz(batch).questions
+        ]
         tools = await execute_study(task, settings, context, llm, asr)
         artifacts = {item.kind: item for item in context.artifacts(task.id)}
         source_artifact = artifacts["transcript"]

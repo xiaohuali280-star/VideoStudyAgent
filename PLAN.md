@@ -344,3 +344,5 @@ Agent 不是一串伪装成 Agent 的固定函数调用：控制循环会接收�
 - filelock 原生平台锁及释放行为：[filelock 官方文档](https://py-filelock.readthedocs.io/en/latest/)；选型已完成，双进程与恢复实测在阶段 5。
 - faster-whisper 的 CPU int8、片段/词级时间戳、模型加载与 PyAV 说明：[官方仓库](https://github.com/SYSTRAN/faster-whisper)。
 - FFmpeg 媒体处理能力：[ffmpeg Documentation](https://ffmpeg.org/ffmpeg.html)。
+
+2026-10-14：阶段 9、10 已完成离线实现及测试，详见 STAGE_9_REPORT.md、STAGE_10_REPORT.md。按最新授权继续 11–14。

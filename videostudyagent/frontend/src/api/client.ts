@@ -48,7 +48,7 @@ export function friendlyError(error: unknown): string {
   return error instanceof ApiError ? error.message : "暂时无法连接服务，请稍后重试。";
 }
 
-async function jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
+export async function jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
   if (!response.ok) return responseError(response);
   return response.json() as Promise<T>;
@@ -67,8 +67,8 @@ export const retryTask = (id: string) =>
   jsonRequest<Task>(`/api/tasks/${encodeURIComponent(id)}/retry`, { method: "POST" });
 export const videoURL = (id: string) => `/api/tasks/${encodeURIComponent(id)}/video`;
 
-export async function downloadExport(id: string, format: ExportFormat) {
-  const response = await fetch(`/api/tasks/${encodeURIComponent(id)}/exports/${format}`);
+export async function downloadExport(id: string, format: ExportFormat, selection?: { quiz_batch_id?: string; notes_revision_id?: string }) {
+  const response = await fetch(`/api/tasks/${encodeURIComponent(id)}/exports/${format}?${new URLSearchParams(selection)}`);
   if (!response.ok) return responseError(response);
   const url = URL.createObjectURL(await response.blob());
   const anchor = document.createElement("a");

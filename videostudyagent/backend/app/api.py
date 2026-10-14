@@ -126,9 +126,15 @@ def study_result(request: Request, task_id: UUID):
 
 
 @router.get("/{task_id}/exports/{format}")
-def export_result(request: Request, task_id: UUID, format: str):
+def export_result(
+    request: Request,
+    task_id: UUID,
+    format: str,
+    quiz_batch_id: UUID | None = None,
+    notes_revision_id: UUID | None = None,
+):
     path = ResultService(request.app.state.settings.data_dir, repository(request)).export(
-        task_id, format
+        task_id, format, quiz_batch_id, notes_revision_id
     )
     types = {"json": "application/json", "md": "text/markdown", "srt": "application/x-subrip"}
     return FileResponse(path, filename=format, media_type=types[path.suffix[1:]])

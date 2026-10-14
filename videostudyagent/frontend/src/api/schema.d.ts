@@ -159,6 +159,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/{task_id}/quiz-batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Batches */
+        get: operations["batches_api_tasks__task_id__quiz_batches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/quiz-batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Batch Document */
+        get: operations["batch_document_api_tasks__task_id__quiz_batches__batch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -734,6 +768,73 @@ export interface components {
             source_segment_ids: string[];
             /** Evidence */
             evidence: components["schemas"]["SourceEvidence"][];
+        };
+        /** QuizBatch */
+        QuizBatch: {
+            /** Storage Key */
+            storage_key: string;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Schema Version
+             * @default 1.1
+             * @constant
+             */
+            schema_version: "1.1";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Transcript Snapshot Id
+             * Format: uuid
+             */
+            transcript_snapshot_id: string;
+            /**
+             * Notes Revision Id
+             * @default null
+             */
+            notes_revision_id: string | null;
+            /**
+             * Operation Id
+             * @default null
+             */
+            operation_id: string | null;
+            /** Sequence */
+            sequence: number;
+            /**
+             * Nonce
+             * Format: uuid
+             */
+            nonce: string;
+            /**
+             * Question Count
+             * @default 5
+             */
+            question_count: number;
+            /**
+             * Difficulty
+             * @default medium
+             * @enum {string}
+             */
+            difficulty: "easy" | "medium" | "hard";
+            /**
+             * Document Schema Version
+             * @default 1.1
+             * @enum {string}
+             */
+            document_schema_version: "1.0" | "1.1";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** QuizDocument */
         QuizDocument: {
@@ -1419,73 +1520,6 @@ export interface components {
              */
             created_at: string;
         };
-        /** QuizBatch */
-        QuizBatch: {
-            /** Storage Key */
-            storage_key: string;
-            /** Sha256 */
-            sha256: string;
-            /**
-             * Schema Version
-             * @default 1.1
-             * @constant
-             */
-            schema_version: "1.1";
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Task Id
-             * Format: uuid
-             */
-            task_id: string;
-            /**
-             * Transcript Snapshot Id
-             * Format: uuid
-             */
-            transcript_snapshot_id: string;
-            /**
-             * Notes Revision Id
-             * @default null
-             */
-            notes_revision_id: string | null;
-            /**
-             * Operation Id
-             * @default null
-             */
-            operation_id: string | null;
-            /** Sequence */
-            sequence: number;
-            /**
-             * Nonce
-             * Format: uuid
-             */
-            nonce: string;
-            /**
-             * Question Count
-             * @default 5
-             */
-            question_count: number;
-            /**
-             * Difficulty
-             * @default medium
-             * @enum {string}
-             */
-            difficulty: "easy" | "medium" | "hard";
-            /**
-             * Document Schema Version
-             * @default 1.1
-             * @enum {string}
-             */
-            document_schema_version: "1.0" | "1.1";
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
         /** CourseNotePreferences */
         CourseNotePreferences: {
             /**
@@ -1997,7 +2031,10 @@ export interface operations {
     };
     export_result_api_tasks__task_id__exports__format__get: {
         parameters: {
-            query?: never;
+            query?: {
+                quiz_batch_id?: string | null;
+                notes_revision_id?: string | null;
+            };
             header?: never;
             path: {
                 task_id: string;
@@ -2176,6 +2213,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudyOperation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batches_api_tasks__task_id__quiz_batches_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizBatch"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_document_api_tasks__task_id__quiz_batches__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizDocument"] | components["schemas"]["QuizDocumentV11"];
                 };
             };
             /** @description Validation Error */

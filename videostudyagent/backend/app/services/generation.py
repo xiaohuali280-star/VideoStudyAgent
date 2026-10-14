@@ -158,7 +158,8 @@ class GenerationService:
         from app.services.quiz_documents import QuizReader
 
         key = cache_key(
-            tool="quiz-v1",
+            tool="quiz-v2",
+            nonce=getattr(self.repository, "quiz_nonce", None),
             transcript=source.sha256,
             notes=note_artifact.sha256 if note_artifact else None,
             options=task.options.model_dump(),
@@ -191,7 +192,8 @@ class GenerationService:
                     "difficulty_instruction": DIFFICULTY[options.difficulty],
                     "segments": [part.model_dump() for part in chunk.parts],
                     "chapters": [{"id": c.id, "title": c.title[:80]} for c in chapters],
-                    "avoid_questions": [q.question[:80] for q in questions],
+                    "avoid_questions": getattr(self.repository, "previous_questions", [])[-15:]
+                    + [q.question for q in questions],
                 }
 
                 def validate(result):
@@ -201,7 +203,9 @@ class GenerationService:
                         for q in result.questions
                     ):
                         raise ValueError("Question cited a segment outside the supplied chunk")
-                    previous = {normalized(q.question) for q in questions}
+                    previous = {normalized(q.question) for q in questions} | {
+                        normalized(q) for q in getattr(self.repository, "previous_questions", [])
+                    }
                     if any(normalized(q.question) in previous for q in result.questions):
                         raise ValueError("Question duplicates a previous batch")
 

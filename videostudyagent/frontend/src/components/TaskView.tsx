@@ -6,6 +6,8 @@ import NotesViewer from "./NotesViewer";
 import QuizViewer from "./QuizViewer";
 import { clock } from "./Sources";
 import StudyActions from "./StudyActions";
+import QuizBatches from "./QuizBatches";
+import type { QuizDocument } from "../api/client";
 
 export const statusLabels = { queued: "等待处理", running: "正在整理", succeeded: "已完成", failed: "处理未完成" };
 const stepLabels: Record<string, string> = { load_subtitles: "读取字幕", extract_audio: "提取音频", transcribe_audio: "识别语音", generate_notes: "梳理笔记", generate_quiz: "生成自测", unknown: "检查调用" };
@@ -15,6 +17,7 @@ const exports: [ExportFormat, string, "notes" | "quiz" | "transcript"][] = [
 ];
 
 export default function TaskView({ id, onUpdated }: { id: string; onUpdated: () => void }) {
+  const [selectedQuiz, setSelectedQuiz] = useState<QuizDocument>(), [batchId, setBatchId] = useState<string>();
   const [revision, setRevision] = useState(0), [tab, setTab] = useState("notes");
   const [actionError, setActionError] = useState(""), [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState<string>(), [videoError, setVideoError] = useState(false);
@@ -28,7 +31,7 @@ export default function TaskView({ id, onUpdated }: { id: string; onUpdated: () 
   }
   async function download(format: ExportFormat) {
     setDownloading(format); setActionError("");
-    try { await downloadExport(id, format); } catch (failure) { setActionError(friendlyError(failure)); }
+    try { await downloadExport(id, format, format.startsWith("quiz") && batchId ? { quiz_batch_id: batchId } : undefined); } catch (failure) { setActionError(friendlyError(failure)); }
     finally { setDownloading(undefined); }
   }
   if (!detail) return <section className="result-panel"><h1>正在打开课程…</h1>{error && <p role="alert" className="error-message">{error}</p>}</section>;
@@ -39,7 +42,7 @@ export default function TaskView({ id, onUpdated }: { id: string; onUpdated: () 
   return <section className="result-panel" aria-label="课程学习资料">
     <div className="course-heading"><div><div className="eyebrow">YOUR COURSE / STUDY NOTES</div><h1>{task.title}</h1></div><span className={`status-badge ${task.status}`} role="status">{statusLabels[task.status]}</span></div>
     <p className="muted">{task.options.question_count} 道简答题 · {{ easy: "基础理解", medium: "理解与应用", hard: "综合分析" }[task.options.difficulty]} · {task.options.output_language === "zh-CN" ? "简体中文" : task.options.output_language}</p>
-    <StudyActions id={id} onCompleted={() => { setRevision(v => v + 1); onUpdated(); }} />
+    <StudyActions options={task.options} id={id} onCompleted={() => { setRevision(v => v + 1); onUpdated(); }} />
     <ol className="progress-track" aria-label="处理进度">{phases.map(name => {
       const step = [...detail.steps].reverse().find(s => s.tool_name === name);
       const state = step?.status || "pending";
@@ -52,7 +55,8 @@ export default function TaskView({ id, onUpdated }: { id: string; onUpdated: () 
     <div className="result-toolbar"><div className="result-tabs" role="tablist" aria-label="学习资料">{[["notes", "课程笔记"], ["quiz", "自测练习"], ["transcript", "课程字幕"]].map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => setTab(value)}>{label}</button>)}</div></div>
     <div className="result-content" role="tabpanel" aria-label={{ notes: "课程笔记", quiz: "自测练习", transcript: "课程字幕" }[tab]}>
       {tab === "notes" && (result?.notes ? <NotesViewer notes={result.notes} transcript={result.transcript} onSeek={seek} /> : <p className="empty-result">笔记会在整理完成后出现在这里。</p>)}
-      {tab === "quiz" && (result?.quiz ? <QuizViewer quiz={result.quiz} transcript={result.transcript} onSeek={seek} /> : <p className="empty-result">自测题会在生成完成后出现在这里。</p>)}
+      {tab === "quiz" && <QuizBatches id={id} language={task.options.output_language} difficulty={task.options.difficulty} onSelected={(quiz, selected) => { setSelectedQuiz(quiz); setBatchId(selected); }} />}
+      {tab === "quiz" && (selectedQuiz || result?.quiz ? <QuizViewer key={batchId} quiz={(selectedQuiz || result!.quiz)!} transcript={result?.transcript} onSeek={seek} /> : <p className="empty-result">自测题会在生成完成后出现在这里。</p>)}
       {tab === "transcript" && (result?.transcript ? <ol className="transcript-list">{result.transcript.segments.map(segment => <li key={segment.id}>{seek ? <button className="timecode" type="button" onClick={() => seek(segment.start_ms)}>{clock(segment.start_ms)}–{clock(segment.end_ms)}</button> : <span className="timecode">{clock(segment.start_ms)}–{clock(segment.end_ms)}</span>}<p>{segment.text}</p></li>)}</ol> : <p className="empty-result">课程字幕尚未准备好。</p>)}
     </div>
     <div className="export-bar"><span>保存学习资料</span><div>{exports.map(([format, label, kind]) => <button key={format} type="button" className="export-button" disabled={!result?.[kind] || !!downloading} onClick={() => void download(format)} aria-label={`导出${label}`}>{downloading === format ? "下载中…" : label} <span aria-hidden="true">↓</span></button>)}</div></div>
