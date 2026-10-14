@@ -14,6 +14,7 @@ from app.core.config import Settings
 from app.core.errors import StudyError
 from app.core.upload_limit import UploadLimitMiddleware
 from app.schemas.common import ErrorInfo, ErrorResponse, ExportFormat, HealthResponse, PublicConfig
+from app.schemas.iteration import ITERATION_CONTRACTS
 from app.schemas.providers import ModelReply, ModelRequest, ToolCall, ToolDefinition
 from app.schemas.study import NotesDocument, QuizDocument, StudyOptions, Transcript, TranscriptChunk
 from app.schemas.tasks import (
@@ -28,6 +29,7 @@ from app.schemas.tasks import (
 )
 
 DOMAIN_CONTRACTS = (
+    *ITERATION_CONTRACTS,
     StudyOptions,
     Transcript,
     TranscriptChunk,

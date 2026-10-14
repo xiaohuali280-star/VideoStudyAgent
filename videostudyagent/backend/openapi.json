@@ -526,10 +526,10 @@
           },
           "stage": {
             "type": "integer",
-            "maximum": 7.0,
+            "maximum": 14.0,
             "minimum": 1.0,
             "title": "Stage",
-            "default": 7
+            "default": 8
           }
         },
         "additionalProperties": false,
@@ -1414,6 +1414,1388 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ProcessingOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "generate_notes": {
+            "default": true,
+            "title": "Generate Notes",
+            "type": "boolean"
+          },
+          "generate_quiz": {
+            "default": true,
+            "title": "Generate Quiz",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "generate_notes",
+          "generate_quiz"
+        ],
+        "title": "ProcessingOptions",
+        "type": "object"
+      },
+      "QuizGenerationOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "question_count": {
+            "default": 5,
+            "maximum": 5,
+            "minimum": 5,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "default": "medium",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "output_language": {
+            "default": "zh-CN",
+            "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+            "title": "Output Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_count",
+          "difficulty",
+          "output_language"
+        ],
+        "title": "QuizGenerationOptions",
+        "type": "object"
+      },
+      "NotePreferences": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "default": "standard",
+            "enum": [
+              "concise",
+              "standard",
+              "detailed"
+            ],
+            "title": "Detail",
+            "type": "string"
+          },
+          "style": {
+            "default": "outline",
+            "enum": [
+              "outline",
+              "explained",
+              "review"
+            ],
+            "title": "Style",
+            "type": "string"
+          },
+          "include_examples": {
+            "default": false,
+            "title": "Include Examples",
+            "type": "boolean"
+          },
+          "highlight_formulas": {
+            "default": true,
+            "title": "Highlight Formulas",
+            "type": "boolean"
+          },
+          "focus_topics": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Focus Topics",
+            "type": "array"
+          },
+          "custom_instructions": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Custom Instructions",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail",
+          "style",
+          "include_examples",
+          "highlight_formulas",
+          "focus_topics",
+          "custom_instructions"
+        ],
+        "title": "NotePreferences",
+        "type": "object"
+      },
+      "InitialStudyRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "initial_study",
+            "default": "initial_study",
+            "title": "Kind",
+            "type": "string"
+          },
+          "processing": {
+            "$ref": "#/components/schemas/ProcessingOptions"
+          },
+          "quiz": {
+            "$ref": "#/components/schemas/QuizGenerationOptions"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/NotePreferences"
+          }
+        },
+        "required": [
+          "kind",
+          "processing",
+          "quiz",
+          "preferences"
+        ],
+        "title": "InitialStudyRequest",
+        "type": "object"
+      },
+      "GenerateNotesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "generate_notes",
+            "default": "generate_notes",
+            "title": "Kind",
+            "type": "string"
+          },
+          "transcript_snapshot_id": {
+            "format": "uuid",
+            "title": "Transcript Snapshot Id",
+            "type": "string"
+          },
+          "output_language": {
+            "default": "zh-CN",
+            "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+            "title": "Output Language",
+            "type": "string"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/NotePreferences"
+          }
+        },
+        "required": [
+          "kind",
+          "transcript_snapshot_id",
+          "output_language",
+          "preferences"
+        ],
+        "title": "GenerateNotesRequest",
+        "type": "object"
+      },
+      "GenerateQuizRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "generate_quiz",
+            "default": "generate_quiz",
+            "title": "Kind",
+            "type": "string"
+          },
+          "transcript_snapshot_id": {
+            "format": "uuid",
+            "title": "Transcript Snapshot Id",
+            "type": "string"
+          },
+          "notes_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes Revision Id"
+          },
+          "options": {
+            "$ref": "#/components/schemas/QuizGenerationOptions"
+          }
+        },
+        "required": [
+          "kind",
+          "transcript_snapshot_id",
+          "notes_revision_id",
+          "options"
+        ],
+        "title": "GenerateQuizRequest",
+        "type": "object"
+      },
+      "ChatReplyRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "chat_reply",
+            "default": "chat_reply",
+            "title": "Kind",
+            "type": "string"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "notes_revision_id": {
+            "format": "uuid",
+            "title": "Notes Revision Id",
+            "type": "string"
+          },
+          "chapter_ids": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Chapter Ids",
+            "type": "array"
+          },
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "conversation_id",
+          "notes_revision_id",
+          "chapter_ids",
+          "message"
+        ],
+        "title": "ChatReplyRequest",
+        "type": "object"
+      },
+      "ReviseNotesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "revise_notes",
+            "default": "revise_notes",
+            "title": "Kind",
+            "type": "string"
+          },
+          "transcript_snapshot_id": {
+            "format": "uuid",
+            "title": "Transcript Snapshot Id",
+            "type": "string"
+          },
+          "base_revision_id": {
+            "format": "uuid",
+            "title": "Base Revision Id",
+            "type": "string"
+          },
+          "chapter_ids": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Chapter Ids",
+            "type": "array"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/NotePreferences"
+          },
+          "instruction": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Instruction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "transcript_snapshot_id",
+          "base_revision_id",
+          "chapter_ids",
+          "preferences",
+          "instruction"
+        ],
+        "title": "ReviseNotesRequest",
+        "type": "object"
+      },
+      "OperationAttempt": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "exclusiveMinimum": 0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/OperationUsage"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Started At"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "attempt",
+          "status",
+          "usage",
+          "started_at",
+          "finished_at",
+          "error"
+        ],
+        "title": "OperationAttempt",
+        "type": "object"
+      },
+      "OperationOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "transcript_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Snapshot Id"
+          },
+          "notes_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes Revision Id"
+          },
+          "quiz_batch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quiz Batch Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Message Id"
+          }
+        },
+        "required": [
+          "transcript_snapshot_id",
+          "notes_revision_id",
+          "quiz_batch_id",
+          "message_id"
+        ],
+        "title": "OperationOutput",
+        "type": "object"
+      },
+      "OperationUsage": {
+        "additionalProperties": false,
+        "properties": {
+          "request_limit": {
+            "default": 100,
+            "exclusiveMinimum": 0,
+            "title": "Request Limit",
+            "type": "integer"
+          },
+          "token_limit": {
+            "default": 500000,
+            "exclusiveMinimum": 0,
+            "title": "Token Limit",
+            "type": "integer"
+          },
+          "requests_reserved": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Requests Reserved",
+            "type": "integer"
+          },
+          "tokens_reserved": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Tokens Reserved",
+            "type": "integer"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Tokens"
+          }
+        },
+        "required": [
+          "request_limit",
+          "token_limit",
+          "requests_reserved",
+          "tokens_reserved",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "OperationUsage",
+        "type": "object"
+      },
+      "StudyOperation": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "request": {
+            "discriminator": {
+              "mapping": {
+                "chat_reply": "#/components/schemas/ChatReplyRequest",
+                "generate_notes": "#/components/schemas/GenerateNotesRequest",
+                "generate_quiz": "#/components/schemas/GenerateQuizRequest",
+                "initial_study": "#/components/schemas/InitialStudyRequest",
+                "revise_notes": "#/components/schemas/ReviseNotesRequest"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/InitialStudyRequest"
+              },
+              {
+                "$ref": "#/components/schemas/GenerateNotesRequest"
+              },
+              {
+                "$ref": "#/components/schemas/GenerateQuizRequest"
+              },
+              {
+                "$ref": "#/components/schemas/ChatReplyRequest"
+              },
+              {
+                "$ref": "#/components/schemas/ReviseNotesRequest"
+              }
+            ],
+            "title": "Request"
+          },
+          "request_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Request Hash",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "status": {
+            "default": "queued",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "attempt": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Finished At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "usage": {
+            "$ref": "#/components/schemas/OperationUsage"
+          },
+          "output": {
+            "$ref": "#/components/schemas/OperationOutput"
+          },
+          "legacy_options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudyOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "cancel_requested": {
+            "default": false,
+            "title": "Cancel Requested",
+            "type": "boolean"
+          },
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/OperationAttempt"
+            },
+            "title": "Attempts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "id",
+          "task_id",
+          "request",
+          "request_hash",
+          "idempotency_key",
+          "status",
+          "attempt",
+          "created_at",
+          "started_at",
+          "finished_at",
+          "error",
+          "usage",
+          "output",
+          "legacy_options",
+          "cancel_requested",
+          "attempts"
+        ],
+        "title": "StudyOperation",
+        "type": "object"
+      },
+      "TranscriptSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "storage_key": {
+            "minLength": 1,
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "document_schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Document Schema Version",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "storage_key",
+          "sha256",
+          "schema_version",
+          "id",
+          "task_id",
+          "document_schema_version",
+          "created_at"
+        ],
+        "title": "TranscriptSnapshot",
+        "type": "object"
+      },
+      "NotesRevision": {
+        "additionalProperties": false,
+        "properties": {
+          "storage_key": {
+            "minLength": 1,
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "transcript_snapshot_id": {
+            "format": "uuid",
+            "title": "Transcript Snapshot Id",
+            "type": "string"
+          },
+          "parent_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parent Revision Id"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Id"
+          },
+          "status": {
+            "default": "draft",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "document_schema_version": {
+            "default": "1.1",
+            "enum": [
+              "1.0",
+              "1.1"
+            ],
+            "title": "Document Schema Version",
+            "type": "string"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/NotePreferences"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "storage_key",
+          "sha256",
+          "schema_version",
+          "id",
+          "task_id",
+          "transcript_snapshot_id",
+          "parent_revision_id",
+          "operation_id",
+          "status",
+          "document_schema_version",
+          "preferences",
+          "created_at"
+        ],
+        "title": "NotesRevision",
+        "type": "object"
+      },
+      "QuizBatch": {
+        "additionalProperties": false,
+        "properties": {
+          "storage_key": {
+            "minLength": 1,
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "transcript_snapshot_id": {
+            "format": "uuid",
+            "title": "Transcript Snapshot Id",
+            "type": "string"
+          },
+          "notes_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes Revision Id"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Id"
+          },
+          "sequence": {
+            "exclusiveMinimum": 0,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "nonce": {
+            "format": "uuid",
+            "title": "Nonce",
+            "type": "string"
+          },
+          "question_count": {
+            "default": 5,
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "default": "medium",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "document_schema_version": {
+            "default": "1.1",
+            "enum": [
+              "1.0",
+              "1.1"
+            ],
+            "title": "Document Schema Version",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "storage_key",
+          "sha256",
+          "schema_version",
+          "id",
+          "task_id",
+          "transcript_snapshot_id",
+          "notes_revision_id",
+          "operation_id",
+          "sequence",
+          "nonce",
+          "question_count",
+          "difficulty",
+          "document_schema_version",
+          "created_at"
+        ],
+        "title": "QuizBatch",
+        "type": "object"
+      },
+      "CourseNotePreferences": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "revision": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/NotePreferences"
+          }
+        },
+        "required": [
+          "schema_version",
+          "task_id",
+          "revision",
+          "preferences"
+        ],
+        "title": "CourseNotePreferences",
+        "type": "object"
+      },
+      "CourseStudyState": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "revision": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "transcript_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Snapshot Id"
+          },
+          "notes_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes Revision Id"
+          },
+          "quiz_batch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quiz Batch Id"
+          }
+        },
+        "required": [
+          "schema_version",
+          "task_id",
+          "revision",
+          "transcript_snapshot_id",
+          "notes_revision_id",
+          "quiz_batch_id"
+        ],
+        "title": "CourseStudyState",
+        "type": "object"
+      },
+      "Conversation": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "id",
+          "task_id",
+          "created_at"
+        ],
+        "title": "Conversation",
+        "type": "object"
+      },
+      "ConversationMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "client_message_id": {
+            "format": "uuid",
+            "title": "Client Message Id",
+            "type": "string"
+          },
+          "sequence": {
+            "exclusiveMinimum": 0,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "content": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "notes_revision_id": {
+            "format": "uuid",
+            "title": "Notes Revision Id",
+            "type": "string"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/SourceEvidence"
+            },
+            "maxItems": 20,
+            "title": "Citations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "id",
+          "task_id",
+          "conversation_id",
+          "client_message_id",
+          "sequence",
+          "role",
+          "content",
+          "notes_revision_id",
+          "operation_id",
+          "created_at",
+          "citations"
+        ],
+        "title": "ConversationMessage",
+        "type": "object"
+      },
+      "NotesDocumentV11": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "learning_objectives": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "chapters": {
+            "items": {
+              "$ref": "#/components/schemas/NoteChapter"
+            },
+            "minItems": 1,
+            "title": "Chapters",
+            "type": "array"
+          },
+          "key_concepts": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Key Concepts",
+            "type": "array"
+          },
+          "summary": {
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "title",
+          "learning_objectives",
+          "chapters",
+          "key_concepts",
+          "summary"
+        ],
+        "title": "NotesDocumentV11",
+        "type": "object"
+      },
+      "QuestionV11": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "short_answer",
+            "default": "short_answer",
+            "title": "Type",
+            "type": "string"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "chapter_id": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Chapter Id"
+          },
+          "question": {
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "answer": {
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "explanation": {
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "source_segment_ids": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Source Segment Ids",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/SourceEvidence"
+            },
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "difficulty",
+          "chapter_id",
+          "question",
+          "answer",
+          "explanation",
+          "source_segment_ids",
+          "evidence"
+        ],
+        "title": "QuestionV11",
+        "type": "object"
+      },
+      "QuizDocumentV11": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.1",
+            "default": "1.1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "question_count": {
+            "default": 5,
+            "maximum": 5,
+            "minimum": 5,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionV11"
+            },
+            "maxItems": 5,
+            "minItems": 5,
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "question_count",
+          "difficulty",
+          "questions"
+        ],
+        "title": "QuizDocumentV11",
+        "type": "object"
       },
       "ChunkPart": {
         "additionalProperties": false,

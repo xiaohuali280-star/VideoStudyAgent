@@ -2,6 +2,7 @@ from sqlalchemy import URL
 
 from alembic import context
 from app.core.config import Settings
+from app.db import iteration_models, models  # noqa: F401 -- register all versioned metadata
 from app.db.session import Base, create_database_engine
 
 config = context.config

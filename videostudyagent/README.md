@@ -1,5 +1,7 @@
 # VideoStudyAgent
 
+阶段 8 已新增操作与版本持久化基础及 1.1 契约，旧主流程保持可用。当前 API/Worker 默认只迁移至 0002_tasks；0003_study_foundation 和旧结果导入是显式接口，仅在临时库验收，尚未对用户数据启用。不要在运行中的用户库直接执行 Alembic upgrade head。新开关、聊天和换批界面从阶段 9 开始接入，详见 [阶段 8 记录](docs/STAGE_8_REPORT.md)。
+
 本地课程视频智能学习 MVP。支持 MP4、SRT/VTT 或视频配字幕；配字幕优先使用字幕。自测为 1–20 道简答题，支持 easy/medium/hard、答案、解析与原文依据；资料语言可选中文或英文。页面提供历史课程、进度、重试、笔记/自测/字幕和视频来源跳转。
 
 导出：notes.md、quiz.md、quiz.json、transcript.json、transcript.srt。导出只读取经过校验的已有产物，不重新调用模型。

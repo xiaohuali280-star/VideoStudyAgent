@@ -4,6 +4,7 @@ from alembic.config import Config
 from sqlalchemy import inspect, text
 
 from alembic import command
+from app.db.iteration_models import ITERATION_TABLES
 from app.db.session import create_database_engine
 
 
@@ -34,7 +35,7 @@ def test_baseline_migration_is_repeatable_and_persistent(tmp_path):
             config.attributes["connection"] = connection
             command.upgrade(config, "head")
             command.upgrade(config, "head")
-            assert set(inspect(connection).get_table_names()) == {
+            assert set(inspect(connection).get_table_names()) == set(ITERATION_TABLES) | {
                 "alembic_version",
                 "tasks",
                 "assets",

@@ -28,14 +28,17 @@ def now():
     return datetime.now(UTC)
 
 
-def initialize_database(path: Path) -> Engine:
+def initialize_database(path: Path, *, revision: str = "0002_tasks") -> Engine:
+    # Stage 8 is opt-in: existing API/Worker must not migrate a user's live database.
+    if revision not in {"0002_tasks", "0003_study_foundation"}:
+        raise ValueError("Unknown schema target")
     engine = create_database_engine(path)
     config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
     try:
         with native_lock(path.parent / ".schema.lock", timeout=5).acquire():
             with engine.begin() as connection:
                 config.attributes["connection"] = connection
-                command.upgrade(config, "head")
+                command.upgrade(config, revision)
     except Exception:
         engine.dispose()
         raise StudyError("STORAGE_ERROR", "数据库初始化未完成，请重试。", 503, True) from None
