@@ -31,7 +31,7 @@ def test_health_needs_no_key_models_or_database(tmp_path):
         "status": "ok",
         "service": "VideoStudyAgent",
         "version": "0.1.0",
-        "stage": 9,
+        "stage": 14,
     }
     assert request(application, "GET", "/api/not-implemented").status_code == 404
     assert not data_dir.exists()
@@ -113,6 +113,17 @@ def test_openapi_snapshot_and_all_component_references():
         "/api/tasks/{task_id}/study-state",
         "/api/tasks/{task_id}/operations",
         "/api/tasks/{task_id}/operations/{operation_id}",
+        "/api/tasks/{task_id}/operations/{operation_id}/retry",
+        "/api/tasks/{task_id}/operations/{operation_id}/cancel",
+        "/api/tasks/{task_id}/quiz-batches",
+        "/api/tasks/{task_id}/quiz-batches/{batch_id}",
+        "/api/tasks/{task_id}/conversations",
+        "/api/tasks/{task_id}/conversations/{conversation_id}/messages",
+        "/api/tasks/{task_id}/note-preferences",
+        "/api/tasks/{task_id}/notes-revisions",
+        "/api/tasks/{task_id}/notes-revisions/{revision_id}",
+        "/api/tasks/{task_id}/notes-revisions/{revision_id}/apply",
+        "/api/tasks/{task_id}/notes-revisions/{revision_id}/discard",
     }
     assert "QuizDocument" in schema["components"]["schemas"]
     snapshot = json.loads((Path(__file__).parents[1] / "openapi.json").read_text("utf-8"))

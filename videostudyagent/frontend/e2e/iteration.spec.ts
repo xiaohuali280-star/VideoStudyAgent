@@ -1,0 +1,62 @@
+import { test, expect } from "@playwright/test";
+import fs from "node:fs/promises";
+
+const subtitle = "1\n00:00:00,000 --> 00:00:02,500\nGradient descent reduces the loss.\n\n2\n00:00:02,500 --> 00:00:05,000\nThe learning rate controls the step size.\n";
+
+test("notes chat, preferences, reviewed revision, quiz batches and reload", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("课程名称（可选）").fill("Iteration acceptance");
+  await page.getByLabel("字幕文件（SRT / VTT，可选）").setInputFiles({ name: "lesson.srt", mimeType: "text/plain", buffer: Buffer.from(subtitle) });
+  await page.getByRole("button", { name: /^开始整理/ }).click();
+  await expect(page.locator(".status-badge")).toHaveText("已完成");
+  const id = new URL(page.url()).searchParams.get("task")!;
+  const original = await (await page.request.get(`/api/tasks/${id}/result`)).json();
+  await page.getByLabel("向课程助教提问").fill("请把本章笔记改成精简提纲");
+  await page.getByRole("button", { name: "发送问题", exact: true }).click();
+  await expect(page.locator(".note-chat article")).toHaveCount(2);
+  expect((await (await page.request.get(`/api/tasks/${id}/result`)).json()).notes).toEqual(original.notes);
+  await page.getByText("笔记偏好、修订与历史版本", { exact: true }).click();
+  await page.getByLabel("课程笔记偏好", { exact: true }).fill("保留公式，使用提纲");
+  await page.getByRole("button", { name: "保存课程偏好", exact: true }).click();
+  await page.getByRole("button", { name: "按此要求生成笔记草稿", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^草稿 ·/ })).toHaveCount(1);
+  await page.getByRole("button", { name: /^草稿 ·/ }).click();
+  await expect(page.getByRole("region", { name: "笔记版本预览" })).toBeVisible();
+  await page.getByRole("button", { name: "应用草稿", exact: true }).click();
+  await expect.poll(async () => (await (await page.request.get(`/api/tasks/${id}/result`)).json()).notes.schema_version).toBe("1.1");
+  await page.getByRole("tab", { name: "自测练习" }).click();
+  await page.getByRole("button", { name: "换一批（5 题）", exact: true }).click();
+  await expect(page.getByLabel("自测历史").locator("option")).toHaveCount(3);
+  const batches = await (await page.request.get(`/api/tasks/${id}/quiz-batches`)).json();
+  expect(batches).toHaveLength(2);
+  await page.getByLabel("自测历史").selectOption(batches[1].id);
+  await expect(page.locator(".quiz-card h3").first()).toHaveText(original.quiz.questions[0].question);
+  const downloaded = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出自测 JSON", exact: true }).click();
+  const file = await downloaded;
+  expect(JSON.parse(await fs.readFile((await file.path())!, "utf8"))).toEqual(original.quiz);
+  await page.reload();
+  await page.getByRole("tab", { name: "课程笔记" }).click();
+  await expect(page.locator(".note-chat article")).toHaveCount(2);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.getByText("笔记偏好、修订与历史版本", { exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "../.cache/qa/stage14-notes-mobile.png", fullPage: true });
+});
+
+test("subtitle-only preparation and later quiz without hidden notes", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("字幕文件（SRT / VTT，可选）").setInputFiles({ name: "only.srt", mimeType: "text/plain", buffer: Buffer.from(subtitle) });
+  await page.getByLabel("梳理笔记", { exact: true }).uncheck();
+  await page.getByLabel("生成自测（每批 5 题）", { exact: true }).uncheck();
+  await page.getByRole("button", { name: /^开始整理/ }).click();
+  await expect(page.locator(".status-badge")).toHaveText("已完成");
+  const id = new URL(page.url()).searchParams.get("task")!;
+  const prepared = await (await page.request.get(`/api/tasks/${id}/result`)).json();
+  expect(prepared.notes).toBeNull(); expect(prepared.quiz).toBeNull();
+  await page.getByRole("button", { name: "生成 5 道自测题", exact: true }).click();
+  await expect(page.getByRole("button", { name: "导出自测 JSON", exact: true })).toBeEnabled();
+  const result = await (await page.request.get(`/api/tasks/${id}/result`)).json();
+  expect(result.notes).toBeNull(); expect(result.quiz.questions).toHaveLength(5);
+  expect(result.quiz.questions.every((q: { chapter_id: unknown }) => q.chapter_id === null)).toBe(true);
+});

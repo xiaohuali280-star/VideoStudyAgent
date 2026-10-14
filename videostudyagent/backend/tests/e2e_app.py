@@ -31,13 +31,15 @@ async def lifespan(application):
 
     ensure_study_schema(settings, repo.engine)
 
+    model = ScriptedStudyModel()
+
     def process():
         with native_lock(settings.data_dir / ".worker.lock"):
             repo.recover_interrupted()
             worker = OperationWorker(
                 settings,
                 repo,
-                lambda task: asyncio.run(run_operation(task, settings, repo, ScriptedStudyModel())),
+                lambda task: asyncio.run(run_operation(task, settings, repo, model)),
             )
             while not stop.is_set():
                 if not worker.run_once():

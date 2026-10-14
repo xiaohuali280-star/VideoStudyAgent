@@ -105,6 +105,13 @@ class LegacyStudyImporter:
             error=task.error,
             legacy_options=task.options,
         )
+        if task.status == "queued":
+            operation.status, operation.finished_at = "failed", now()
+            operation.error = ErrorInfo(
+                code="LEGACY_ACTION_REQUIRED",
+                message="旧排队课程请按新选项重新上传后确认处理。",
+                retryable=False,
+            )
         if task.status == "running":
             operation.status, operation.finished_at = "failed", now()
             operation.error = ErrorInfo(

@@ -721,7 +721,7 @@ export interface components {
             version: string;
             /**
              * Stage
-             * @default 9
+             * @default 14
              */
             stage: number;
         };

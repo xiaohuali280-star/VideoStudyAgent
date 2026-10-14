@@ -64,6 +64,7 @@ async def reply_to_notes(operation, settings, repository, bounded):
             for m in page
             if m.sequence < user.sequence and m.notes_revision_id == r.notes_revision_id
         )
+        history = history[-6:]
         if not page or page[-1].sequence >= user.sequence or len(page) < 100:
             break
         after = page[-1].sequence

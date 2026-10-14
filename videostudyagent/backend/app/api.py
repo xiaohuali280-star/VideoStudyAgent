@@ -105,6 +105,11 @@ def task_detail(request: Request, task_id: UUID):
 @router.post("/{task_id}/retry", response_model=Task, status_code=202)
 def retry_task(request: Request, task_id: UUID):
     repo = repository(request)
+    ensure_study_schema(request.app.state.settings, repo.engine)
+    if repo.get(task_id).options.question_count != 5:
+        raise StudyError(
+            "LEGACY_ACTION_REQUIRED", "旧题数任务请保留历史资料，并按新选项重新上传课程。", 409
+        )
     if repo.get(task_id).status == "succeeded":
         try:
             value = ResultService(request.app.state.settings.data_dir, repo).result(task_id)

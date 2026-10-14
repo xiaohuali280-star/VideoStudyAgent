@@ -60,7 +60,7 @@ class BoundedLLM:
         self.usage_known = self.usage_known or reply.usage_available
         self.actual_input_tokens += reply.input_tokens
         self.actual_output_tokens += reply.output_tokens
+        self.notify()
         if self.actual_input_tokens + self.actual_output_tokens > self.settings.llm_total_tokens:
             raise StudyError("AGENT_LIMIT_EXCEEDED", "模型返回用量超过任务预算。", 422)
-        self.notify()
         return reply

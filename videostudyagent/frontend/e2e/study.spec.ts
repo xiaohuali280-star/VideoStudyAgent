@@ -19,10 +19,10 @@ test("upload, persisted course, notes, folded quiz and five matching exports", a
   await expect(page.locator(".status-badge")).toHaveText("已完成");
   await page.screenshot({ path: "../.cache/qa/stage6-notes.png", fullPage: true });
   await page.getByRole("tab", { name: "自测练习" }).click();
-  await expect(page.locator("details")).toHaveCount(5);
-  await expect(page.locator("details").first()).not.toHaveAttribute("open");
+  await expect(page.locator(".quiz-view details")).toHaveCount(5);
+  await expect(page.locator(".quiz-view details").first()).not.toHaveAttribute("open");
   await page.getByText("查看答案与解析", { exact: true }).first().click();
-  await expect(page.locator("details").first()).toHaveAttribute("open");
+  await expect(page.locator(".quiz-view details").first()).toHaveAttribute("open");
   await expect(page.getByRole("heading", { name: "参考答案", exact: true }).first()).toBeVisible();
   for (const [label, filename] of [["笔记 Markdown", "notes.md"], ["自测 Markdown", "quiz.md"], ["自测 JSON", "quiz.json"], ["字幕 JSON", "transcript.json"], ["字幕 SRT", "transcript.srt"]]) {
     const download = page.waitForEvent("download");

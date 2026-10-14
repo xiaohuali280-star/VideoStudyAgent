@@ -111,7 +111,13 @@ def retry_operation(request: Request, task_id: UUID, operation_id: UUID):
 
 @router.post("/{task_id}/operations/{operation_id}/cancel", response_model=StudyOperation)
 def cancel_operation(request: Request, task_id: UUID, operation_id: UUID):
-    return study_repository(request).request_cancel(task_id, operation_id)
+    repo = study_repository(request)
+    operation = repo.request_cancel(task_id, operation_id)
+    if operation.status == "cancelled" and operation.request.kind == "initial_study":
+        from app.services.operations import fail_initial_task
+
+        fail_initial_task(repository(request), task_id, "操作已取消，请手动重试。")
+    return operation
 
 
 @router.get("/{task_id}/conversations", response_model=list[Conversation])

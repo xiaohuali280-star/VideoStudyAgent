@@ -1,12 +1,14 @@
 # VideoStudyAgent
 
-阶段 8 已新增操作与版本持久化基础及 1.1 契约，旧主流程保持可用。当前 API/Worker 默认只迁移至 0002_tasks；0003_study_foundation 和旧结果导入是显式接口，仅在临时库验收，尚未对用户数据启用。不要在运行中的用户库直接执行 Alembic upgrade head。新开关、聊天和换批界面从阶段 9 开始接入，详见 [阶段 8 记录](docs/STAGE_8_REPORT.md)。
+阶段 8–14 功能已实现，当前新建课程使用统一操作队列。已有课程库须先停止 API/Worker，运行下方显式备份升级命令；本次开发没有迁移你的个人课程库，也没有运行你的待处理任务。
 
-本地课程视频智能学习 MVP。支持 MP4、SRT/VTT 或视频配字幕；配字幕优先使用字幕。自测为 1–20 道简答题，支持 easy/medium/hard、答案、解析与原文依据；资料语言可选中文或英文。页面提供历史课程、进度、重试、笔记/自测/字幕和视频来源跳转。
+本地课程视频智能学习 MVP。支持 MP4、SRT/VTT 或视频配字幕，配字幕时优先使用字幕。字幕始终自动准备；用户分别选择梳理笔记和生成自测，两项都关可在没有 LLM Key 时只处理字幕。新自测每批固定 5 道简答题，支持 easy/medium/hard、答案、解析、引用、换批及历史导出，旧 1–20 题结果仍可阅读。资料语言可选中文或英文。
+
+笔记页提供按章节聊天、课程专属偏好和版本管理。聊天默认只读；可明确点击“按此要求生成笔记草稿”，或填写修改要求生成草稿。预览后应用，支持放弃与恢复旧版本；不会自动重新生成自测。操作记录显示排队、失败、取消、手动重试、每次尝试和课程累计预留量。
 
 导出：notes.md、quiz.md、quiz.json、transcript.json、transcript.srt。导出只读取经过校验的已有产物，不重新调用模型。
 
-阶段 1–7 已完成离线验收；真实小视频/FFmpeg/Whisper 和实际 Worker 子进程已验证。真实 DeepSeek 验收按用户要求延后；测试模型结果不能用于评价模型生成质量。最新证据见 [阶段 7 记录](docs/STAGE_7_REPORT.md)。
+阶段 1–7 已完成离线验收；真实小视频/FFmpeg/Whisper 和实际 Worker 子进程已验证。真实 DeepSeek 验收按用户要求延后；测试模型结果不能用于评价模型生成质量。最新证据见 [阶段 14 记录](docs/STAGE_14_REPORT.md)。
 
 ## 安装
 
@@ -36,7 +38,7 @@ Set-Location backend
 
 ## 配置
 
-.env 固定从 videostudyagent/.env 读取，环境变量优先。仅在本地填写 `VSA_LLM_API_KEY`；模型默认 deepseek-flash，服务地址默认 https://api.deepseek.com，关闭思考模式。不要把密钥放进前端、聊天、日志或 Git。源码中不存在真实密钥；没有 Key 时 API 和页面仍能启动，生成任务会明确失败，可配置后手动重试。
+.env 固定从 videostudyagent/.env 读取，环境变量优先。仅在本地填写 `VSA_LLM_API_KEY`；模型默认 deepseek-flash，服务地址默认 https://api.deepseek.com，关闭思考模式。不要把密钥放进前端、聊天、日志或 Git。源码中不存在真实密钥；没有 Key 时 API 和页面仍能启动，仅字幕模式可完成；启用笔记、自测或聊天时需要有效服务端模型配置。
 
 | 配置 | 默认与含义 |
 | --- | --- |
@@ -44,11 +46,25 @@ Set-Location backend
 | VSA_MAX_VIDEO_BYTES / VSA_MAX_SUBTITLE_BYTES | 500 MiB / 5 MiB |
 | VSA_MAX_DURATION_MS | 7200000，即 120 分钟；不是处理速度承诺 |
 | VSA_LLM_CONTEXT_TOKENS / VSA_LLM_MAX_OUTPUT_TOKENS | 32768 / 4096 |
-| VSA_LLM_MAX_REQUESTS / VSA_LLM_TOTAL_TOKENS | 每次任务尝试 100 / 500000 的保守预算 |
+| VSA_LLM_MAX_REQUESTS / VSA_LLM_TOTAL_TOKENS | 每次操作尝试 100 / 500000 的保守预算 |
 | VSA_AGENT_MAX_TOOL_CALLS | 每次尝试最多 12 个工具调用 |
 | VSA_TASK_TIMEOUT / VSA_ASR_TIMEOUT | 总任务 7200 秒 / ASR 900 秒 |
 
 预算使用 UTF-8 字节作保守输入上界，并为供应商最多三次网络尝试预留请求和输出预算；它不是计费 token 或人民币费用上限。认证失败不自动重试；限流/临时网络故障最多三次，超过短等待范围时留给手动重试。任务重试可能再次产生模型费用，已验证的步骤/缓存可复用。实际付费验收前需另行确认费用上限。
+
+## 已有课程库升级
+
+先在三个终端用 Ctrl+C 停止 API、Worker 和前端。确认 API 与 Worker 均已退出后，在 backend 目录执行：
+
+```powershell
+& .\.venv\Scripts\python.exe -m app.migrate_study --api-stopped
+```
+
+Windows CMD 使用同一命令，去掉开头的 `&`。脚本先将 SQLite 完整备份到 `data/backups/before-v2-*.db`，再显式升级至 0003 并索引通过校验的旧结果；原始媒体及生成文件不改写，不调用模型。已是新版本的课程不会重复导入。Worker 运行时锁会阻止升级，`--api-stopped` 是你确认 API 已停止的必要参数。
+
+旧结果按原题数保留。旧排队或中断任务不会自动生成，原 Task 状态保留作历史记录；需按新选项重新上传确认处理。损坏产物会被跳过或报错，不伪装成成功。不要直接对运行中的数据库执行 Alembic。
+
+如升级后需要回滚，保持所有服务停止，先将当前 `app.db` 及同名 `-wal`/`-shm` 文件移到独立恢复目录保存，再将升级前备份复制为 `app.db`，并使用相应旧版本代码；不能将旧备份与新库的 WAL/SHM 混用。不要让新代码覆盖备份，不删除原始课程目录。
 
 ## 启动
 
@@ -72,7 +88,7 @@ Set-Location backend
 npm.cmd run dev
 ```
 
-打开 [学习工作台](http://127.0.0.1:5173)。[API 文档](http://127.0.0.1:8000/docs) 列出实际接口。health/config 不初始化数据库、不加载模型、不联网；首次业务访问迁移 SQLite。`python -m app.worker --once` 仅处理一个待执行任务。
+打开 [学习工作台](http://127.0.0.1:5173)。[API 文档](http://127.0.0.1:8000/docs) 列出实际接口。health/config 不初始化数据库、不加载模型、不联网；新空库在首次上传时建表；现有旧库会提示 MIGRATION_REQUIRED，等待显式升级。`python -m app.worker --once` 仅处理一个待执行操作。
 
 上传后等待 Worker 整理。选择笔记、自测或字幕；点击“查看答案与解析”展开答案。视频课程可点击来源跳转，不自动播放。失败任务仅在可重试时显示按钮；损坏的已完成结果也允许显式重试。刷新页面或重启 API 后，任务和产物仍在原 data 目录。
 
@@ -123,7 +139,8 @@ React + TypeScript + Vite；FastAPI + Pydantic；SQLite + SQLAlchemy/Alembic；A
 | app/api.py、main.py、core | HTTP、配置、脱敏错误、上传上限 |
 | app/db、alembic | 状态、原子领取、步骤、产物索引、迁移 |
 | app/services | 上传、字幕、媒体、转写、生成、缓存、导出、临时文件 |
-| app/agent、task_runner.py、worker.py | 单 Agent、受控工具、预算、独立进程与恢复 |
+| app/agent、task_runner.py、worker.py、operation_worker.py | 单 Agent、受控工具、统一操作队列、预算、独立进程与恢复 |
+| app/routes/study.py、notes.py、services/note_chat.py、note_revisions.py | 聊天、课程偏好、草稿及版本 API |
 | app/providers、adapters、vendor、prompts | Whisper/DeepSeek、上游适配和版本化提示 |
 | frontend/src/components、hooks、api | 上传、学习资料、进度轮询、类型化请求 |
 
@@ -133,5 +150,5 @@ React + TypeScript + Vite；FastAPI + Pydantic；SQLite + SQLAlchemy/Alembic；A
 
 - 只供本机单使用者；未实现认证、多 Agent、OCR、RAG、自动评分、PDF/Word 导出或部署。
 - 引用匹配保证 quote 来自原片段，不能保证答案语义正确。真实 DeepSeek 质量、成本、长课程性能、真实课程公式抽查仍待付费验收；本轮不调用云端。
-- 长字幕按预算分块并检查全片段覆盖；没有静默截断。大型结果页面暂未虚拟滚动，浏览超长字幕可能较慢。
+- 长字幕按预算分块并检查全片段覆盖；没有静默截断。笔记分块单独保存经校验的检查点，手动重试复用有效块；损坏块重新生成。预算不足先报错，建议分段另建课程，不自动提高预算。大型结果页面暂未虚拟滚动，浏览超长字幕可能较慢。
 - Markdown/KaTeX 构建包有体积提示，当前本地 MVP 可用，后续可按需加载优化。

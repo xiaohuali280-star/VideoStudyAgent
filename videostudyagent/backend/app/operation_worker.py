@@ -63,7 +63,9 @@ class OperationWorker:
             if process.poll() is None:
                 kill_attempt(process)
             current = self.study.operation(operation.task_id, operation.id)
-            if current.status == "running":
+            if current.status == "running" and current.cancel_requested:
+                self.study.acknowledge_cancel(operation.task_id, operation.id)
+            elif current.status == "running":
                 self.study.finish(
                     operation.task_id,
                     operation.id,
@@ -76,25 +78,45 @@ class OperationWorker:
         operation = self.study.claim_next()
         if operation is None:
             return False
-        self.runner(operation)
+        try:
+            self.runner(operation)
+        except KeyboardInterrupt:
+            raise
+        except Exception:
+            current = self.study.operation(operation.task_id, operation.id)
+            if current.status == "running":
+                if current.cancel_requested:
+                    self.study.acknowledge_cancel(operation.task_id, operation.id)
+                else:
+                    self.study.finish(
+                        operation.task_id,
+                        operation.id,
+                        error=ErrorInfo(
+                            code="WORKER_INTERRUPTED", message="操作执行已中断。", retryable=True
+                        ),
+                    )
         current = self.study.operation(operation.task_id, operation.id)
         if (
             operation.request.kind == "initial_study"
-            and current.status in {"failed", "cancelled"}
+            and current.status == "succeeded"
             and self.repository.get(operation.task_id).status == "running"
         ):
-            self.repository.finish(
-                operation.task_id,
-                current.error
-                or ErrorInfo(
-                    code="WORKER_INTERRUPTED", message="操作已取消或中断。", retryable=True
-                ),
-            )
+            self.repository.finish(operation.task_id)
+        if (
+            operation.request.kind == "initial_study"
+            and current.status in {"failed", "cancelled"}
+            and self.repository.get(operation.task_id).status in {"queued", "running"}
+        ):
+            from app.services.operations import fail_initial_task
+
+            fail_initial_task(self.repository, operation.task_id, "操作已取消或中断，请手动重试。")
         return True
 
     def recover(self):
+        from filelock import Timeout
         from sqlalchemy import select
 
+        from app.core.locking import native_lock
         from app.db.iteration_models import OperationRow
         from app.schemas.iteration import StudyOperation
 
@@ -104,15 +126,62 @@ class OperationWorker:
             ).all()
         for payload in rows:
             operation = StudyOperation.model_validate(payload)
-            if operation.cancel_requested:
-                self.study.acknowledge_cancel(operation.task_id, operation.id)
-            else:
-                self.study.finish(
-                    operation.task_id,
-                    operation.id,
-                    error=ErrorInfo(
-                        code="WORKER_INTERRUPTED",
-                        message="操作已中断，请手动重试。",
-                        retryable=True,
-                    ),
+
+            try:
+                with native_lock(
+                    self.settings.data_dir / "tasks" / str(operation.task_id) / ".attempt.lock"
+                ).acquire(timeout=0):
+                    if operation.cancel_requested:
+                        self.study.acknowledge_cancel(operation.task_id, operation.id)
+                    else:
+                        self.study.finish(
+                            operation.task_id,
+                            operation.id,
+                            error=ErrorInfo(
+                                code="WORKER_INTERRUPTED",
+                                message="操作已中断，请手动重试。",
+                                retryable=True,
+                            ),
+                        )
+                    if operation.request.kind == "initial_study":
+                        from app.services.operations import fail_initial_task
+
+                        fail_initial_task(
+                            self.repository, operation.task_id, "操作已中断，请手动重试。"
+                        )
+            except Timeout:
+                continue  # A surviving attempt still owns this course; do not relabel it.
+        # Repair the small window between operation completion and its legacy task projection.
+        from app.db.models import TaskRow
+        from app.schemas.tasks import Task
+
+        with self.repository.engine.connect() as connection:
+            tasks = [
+                Task.model_validate(p)
+                for p in connection.scalars(
+                    select(TaskRow.payload).where(TaskRow.status == "running")
                 )
+            ]
+        for task in tasks:
+            with self.repository.engine.connect() as connection:
+                payload = connection.scalar(
+                    select(OperationRow.payload).where(
+                        OperationRow.task_id == str(task.id),
+                        OperationRow.idempotency_key == f"initial:{task.attempt}",
+                    )
+                )
+            if not payload:
+                continue  # Legacy tasks are never implicitly rerun or rewritten.
+            operation = StudyOperation.model_validate(payload)
+            try:
+                with native_lock(
+                    self.settings.data_dir / "tasks" / str(task.id) / ".attempt.lock"
+                ).acquire(timeout=0):
+                    if operation.status == "succeeded":
+                        self.repository.finish(task.id)
+                    elif operation.status in {"failed", "cancelled"}:
+                        from app.services.operations import fail_initial_task
+
+                        fail_initial_task(self.repository, task.id, "操作已中断，请手动重试。")
+            except Timeout:
+                continue

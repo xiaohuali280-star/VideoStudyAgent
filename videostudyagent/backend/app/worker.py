@@ -132,12 +132,13 @@ def main():
         with lock.acquire(timeout=0):
             repository = TaskRepository(initialize_database(settings.data_dir / "app.db"))
             try:
-                repository.recover_interrupted()
                 cleanup_temporary(settings, repository)
                 from app.operation_worker import OperationWorker
                 from app.services.operations import ensure_study_schema
 
                 ensure_study_schema(settings, repository.engine)
+                repository.recover_interrupted()
+                cleanup_temporary(settings, repository)
                 worker = OperationWorker(settings, repository)
                 worker.recover()
                 while True:

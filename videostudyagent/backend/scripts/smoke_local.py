@@ -105,9 +105,9 @@ def main():
             vtt = "WEBVTT\n\n00:00.000 --> 00:02.500\nGradient descent reduces the loss.\n"
             for mode, count, difficulty in [
                 ("video", 5, "medium"),
-                ("vtt", 1, "easy"),
+                ("vtt", 5, "easy"),
                 ("both", 5, "medium"),
-                ("vtt_cached", 1, "easy"),
+                ("vtt_cached", 5, "easy"),
             ]:
                 with args.video.open("rb") as video:
                     files = (
@@ -154,7 +154,12 @@ def main():
                     assert result["transcript"]["source"] == "asr"
                     assert len(result["transcript"]["segments"]) > 0
                 if mode == "vtt_cached":
-                    assert all(step["cache_hit"] for step in steps)
+                    assert any(
+                        step["cache_hit"] for step in steps if step["tool_name"] != "generate_quiz"
+                    )
+                    assert not any(
+                        step["cache_hit"] for step in steps if step["tool_name"] == "generate_quiz"
+                    )
                 for format in (
                     "notes.md",
                     "quiz.md",

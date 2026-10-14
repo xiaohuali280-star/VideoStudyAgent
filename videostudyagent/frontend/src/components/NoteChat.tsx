@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { friendlyError, getStudyState, jsonRequest, submitOperation } from "../api/client";
-import type { NotesDocument, Transcript } from "../api/client";
+import type { NotesDocument, Transcript, StudyOperation } from "../api/client";
 import SafeMarkdown from "./SafeMarkdown";
 import Sources from "./Sources";
 
-type Message = { id: string; role: "user" | "assistant"; content: string; sequence: number; notes_revision_id: string; citations: { segment_id: string; quote: string }[] };
+type Message = { id: string; role: "user" | "assistant"; content: string; sequence: number; notes_revision_id: string; operation_id?: string | null; citations: { segment_id: string; quote: string }[] };
 export default function NoteChat({ id, notes, transcript, onSeek }: { id: string; notes: NotesDocument; transcript?: Transcript | null; onSeek?: (ms: number) => void }) {
   const [conversation, setConversation] = useState(""), [messages, setMessages] = useState<Message[]>([]);
   const [chapters, setChapters] = useState<string[]>([notes.chapters[0].id]), [text, setText] = useState("");
@@ -34,9 +34,24 @@ export default function NoteChat({ id, notes, transcript, onSeek }: { id: string
     } catch (e) { setError(friendlyError(e)); }
     finally { setBusy(false); sending.current = false; }
   }
+  async function draftFromMessage(message: Message) {
+    if (sending.current || !message.operation_id) return;
+    sending.current = true; setBusy(true); setError("");
+    try {
+      const [state, operation, saved] = await Promise.all([
+        getStudyState(id), jsonRequest<StudyOperation>(`/api/tasks/${id}/operations/${message.operation_id}`),
+        jsonRequest<{ preferences: Extract<StudyOperation["request"], { kind: "revise_notes" }>["preferences"] } | null>(`/api/tasks/${id}/note-preferences`),
+      ]);
+      if (!state.transcript_snapshot_id || operation.request.kind !== "chat_reply") return;
+      await submitOperation(id, { kind: "revise_notes", base_revision_id: message.notes_revision_id,
+        transcript_snapshot_id: state.transcript_snapshot_id, chapter_ids: operation.request.chapter_ids,
+        preferences: saved?.preferences || { detail: "standard", style: "outline", include_examples: false, highlight_formulas: true, focus_topics: [], custom_instructions: "" }, instruction: message.content });
+    } catch (e) { setError(friendlyError(e)); }
+    finally { setBusy(false); sending.current = false; }
+  }
   return <section className="note-chat" aria-label="笔记聊天"><h2>和课程笔记聊一聊</h2><p className="muted">回答基于所选章节，聊天不会改动正式笔记。操作进度、取消和重试见上方操作记录。</p>
     <fieldset><legend>选择讨论章节（最多 20 个）</legend>{notes.chapters.map(c => <label key={c.id}><input type="checkbox" checked={chapters.includes(c.id)} onChange={e => setChapters(ids => e.target.checked ? [...ids, c.id] : ids.filter(v => v !== c.id))} />{c.title}</label>)}</fieldset>
-    <div aria-live="polite">{messages.map(m => <article key={m.id}><strong>{m.role === "user" ? "你" : "课程助教"}</strong><small> · 笔记版本 {m.notes_revision_id.slice(0, 8)}</small><SafeMarkdown content={m.content} />{m.citations.map((c, i) => <div key={i}><blockquote>{c.quote}</blockquote><Sources ids={[c.segment_id]} transcript={transcript} onSeek={onSeek} /></div>)}</article>)}</div>
+    <div aria-live="polite">{messages.map(m => <article key={m.id}><strong>{m.role === "user" ? "你" : "课程助教"}</strong><small> · 笔记版本 {m.notes_revision_id.slice(0, 8)}</small><SafeMarkdown content={m.content} />{m.citations.map((c, i) => <div key={i}><blockquote>{c.quote}</blockquote><Sources ids={[c.segment_id]} transcript={transcript} onSeek={onSeek} /></div>)}{m.role === "user" && m.operation_id && <button disabled={busy} onClick={() => void draftFromMessage(m)}>按此要求生成笔记草稿</button>}</article>)}</div>
     <label>向课程助教提问<textarea aria-label="向课程助教提问" maxLength={2000} value={text} onChange={e => setText(e.target.value)} /></label>
     <button disabled={busy || !text.trim() || chapters.length === 0 || chapters.length > 20} onClick={() => void send()}>{busy ? "正在提交…" : "发送问题"}</button>{error && <p role="alert">{error}</p>}
   </section>;

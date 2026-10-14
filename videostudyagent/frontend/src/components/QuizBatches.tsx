@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { friendlyError, getOperations, getStudyState, jsonRequest, submitOperation } from "../api/client";
 import type { QuizDocument } from "../api/client";
 
@@ -7,19 +7,31 @@ export default function QuizBatches({ id, language, difficulty, onSelected }: { 
   const [batches, setBatches] = useState<Batch[]>([]), [selected, setSelected] = useState("");
   const [level, setLevel] = useState(difficulty), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [page, setPage] = useState(0);
+  const callback = useRef(onSelected), selection = useRef("");
+  const loaded = useRef("");
+  callback.current = onSelected; selection.current = selected;
   useEffect(() => {
     let stopped = false;
     const refresh = async () => {
       try {
         const [items, ops] = await Promise.all([jsonRequest<Batch[]>(`/api/tasks/${id}/quiz-batches?offset=${page * 20}`), getOperations(id)]);
-        if (!stopped) { setBatches(items); setBusy(ops.some(op => ["queued", "running"].includes(op.status))); }
+        if (!stopped) {
+          setBatches(items); setBusy(ops.some(op => ["queued", "running"].includes(op.status)));
+          if (!selection.current) {
+            const state = await getStudyState(id);
+            if (state.quiz_batch_id && loaded.current !== state.quiz_batch_id) {
+              const document = await jsonRequest<QuizDocument>(`/api/tasks/${id}/quiz-batches/${state.quiz_batch_id}`);
+              if (!stopped && !selection.current) { loaded.current = state.quiz_batch_id; callback.current(document, state.quiz_batch_id); }
+            }
+          }
+        }
       } catch (e) { if (!stopped) setError(friendlyError(e)); }
     };
     void refresh(); const timer = setInterval(() => void refresh(), 2000);
     return () => { stopped = true; clearInterval(timer); };
   }, [id, page]);
   async function select(value: string) {
-    try { const quiz = await jsonRequest<QuizDocument>(`/api/tasks/${id}/quiz-batches/${value}`); setSelected(value); onSelected(quiz, value); }
+    try { const target = value || (await getStudyState(id)).quiz_batch_id; if (!target) return; const quiz = await jsonRequest<QuizDocument>(`/api/tasks/${id}/quiz-batches/${target}`); setSelected(value); loaded.current = target; onSelected(quiz, target); }
     catch (e) { setError(friendlyError(e)); }
   }
   async function regenerate() {

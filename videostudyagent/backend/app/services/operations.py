@@ -109,11 +109,90 @@ def as_artifact(record, kind):
     )
 
 
+def fail_initial_task(repository, task_id, message):
+    task = repository.get(task_id)
+    if task.status not in {"queued", "running"}:
+        return
+    failed = task.model_copy(
+        update={
+            "status": "failed",
+            "finished_at": now(),
+            "error": ErrorInfo(code="WORKER_INTERRUPTED", message=message, retryable=True),
+        }
+    )
+    with repository.engine.begin() as connection:
+        connection.execute(
+            update(TaskRow)
+            .where(TaskRow.id == str(task.id), TaskRow.status.in_(["queued", "running"]))
+            .values(status="failed", payload=failed.model_dump(mode="json"))
+        )
+
+
 async def run_operation(operation, settings, repository, llm=None, asr=None):
     repo = StudyRepository(repository.engine)
     task = repository.get(operation.task_id)
     request = operation.request
+    frozen_state = repo.state(task.id)
     try:
+        # A process can stop after persisting its output but before recording success.
+        # Reuse that immutable output rather than invoking the model again.
+        if request.kind == "generate_quiz":
+            saved = next(
+                (
+                    b
+                    for b in repo.quiz_batches(task.id, limit=100)
+                    if b.operation_id == operation.id
+                ),
+                None,
+            )
+            if saved:
+                VersionReader(settings.data_dir).quiz(saved)
+                active = (
+                    repo.batch(task.id, frozen_state.quiz_batch_id)
+                    if frozen_state.quiz_batch_id
+                    else None
+                )
+                if active is None or active.sequence < saved.sequence:
+                    repo.publish_batch(
+                        task.id, saved.id, expected_current_id=frozen_state.quiz_batch_id
+                    )
+                repo.finish(task.id, operation.id, output=OperationOutput(quiz_batch_id=saved.id))
+                return
+        if request.kind in {"generate_notes", "revise_notes"}:
+            saved = next(
+                (
+                    n
+                    for n in repo.note_revisions(task.id, limit=100)
+                    if n.operation_id == operation.id and not n.discarded
+                ),
+                None,
+            )
+            if saved:
+                VersionReader(settings.data_dir).notes(saved)
+                if request.kind == "generate_notes" and saved.status == "draft":
+                    repo.publish_notes(
+                        task.id, saved.id, expected_current_id=frozen_state.notes_revision_id
+                    )
+                repo.finish(
+                    task.id, operation.id, output=OperationOutput(notes_revision_id=saved.id)
+                )
+                return
+        if request.kind == "chat_reply":
+            after = 0
+            while True:
+                page = repo.messages(
+                    task.id, request.conversation_id, after_sequence=after, limit=100
+                )
+                saved = next(
+                    (m for m in page if m.operation_id == operation.id and m.role == "assistant"),
+                    None,
+                )
+                if saved:
+                    repo.finish(task.id, operation.id, output=OperationOutput(message_id=saved.id))
+                    return
+                if len(page) < 100:
+                    break
+                after = page[-1].sequence
         bounded = None
         if (
             request.kind != "initial_study"
@@ -227,9 +306,11 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
                 created_at=source_artifact.created_at,
             )
         )
-        state = repo.state(task.id)
+        state = frozen_state
         if state.transcript_snapshot_id is None:
             state = repo.set_source(task.id, source.id, expected_revision=state.revision)
+        elif state.transcript_snapshot_id != source.id:
+            raise StudyError("STUDY_CONFLICT", "操作字幕版本已变化。", 409)
         writer = VersionWriter(settings.data_dir)
         note_id = getattr(request, "notes_revision_id", None)
         batch_id = None

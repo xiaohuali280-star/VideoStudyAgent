@@ -2040,7 +2040,7 @@
             "maximum": 14.0,
             "minimum": 1.0,
             "title": "Stage",
-            "default": 9
+            "default": 14
           }
         },
         "additionalProperties": false,

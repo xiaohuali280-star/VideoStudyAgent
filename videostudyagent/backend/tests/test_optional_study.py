@@ -4,16 +4,55 @@ import json
 import pytest
 
 from app.db.study_repository import StudyRepository
+from app.providers.fakes import FakeASR
+from app.schemas.study import Transcript
 from app.services.operations import run_operation
 from tests.scripted_llm import ScriptedStudyModel
 from tests.test_config_health import request
-from tests.test_upload_persistence import upload
+from tests.test_upload_persistence import MP4, SRT, upload
 
 
 @pytest.mark.parametrize("notes,quiz", [(False, False), (True, False), (False, True), (True, True)])
-def test_optional_pipeline_publishes_only_requested_results(application, notes, quiz):
+@pytest.mark.parametrize("kind", ["srt", "vtt", "video", "both"])
+def test_optional_pipeline_publishes_only_requested_results(
+    application, notes, quiz, kind, monkeypatch
+):
+    monkeypatch.setattr("app.services.transcription.probe_video", lambda *args: 2000)
+
+    def extract(source, target, settings):
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"test-only audio")
+
+    monkeypatch.setattr("app.services.transcription.extract_audio", extract)
+    files = {}
+    if kind in {"srt", "both"}:
+        files["subtitle"] = ("lesson.srt", SRT)
+    if kind == "vtt":
+        files["subtitle"] = (
+            "lesson.vtt",
+            b"WEBVTT\n\n00:00.000 --> 00:02.000\nLearning rate controls step size.\n",
+        )
+    if kind in {"video", "both"}:
+        files["video"] = ("lesson.mp4", MP4)
+    asr = FakeASR(
+        Transcript(
+            source="asr",
+            language="en",
+            duration_ms=2000,
+            segments=[
+                {
+                    "id": "seg_00001",
+                    "start_ms": 0,
+                    "end_ms": 2000,
+                    "text": "Learning rate controls step size.",
+                }
+            ],
+        )
+    )
     response = upload(
-        application, data={"options": json.dumps({"generate_notes": notes, "generate_quiz": quiz})}
+        application,
+        files,
+        data={"options": json.dumps({"generate_notes": notes, "generate_quiz": quiz})},
     )
     assert response.status_code == 202
     task_id = response.json()["id"]
@@ -22,7 +61,9 @@ def test_optional_pipeline_publishes_only_requested_results(application, notes, 
     operation = study.claim_next()
     model = ScriptedStudyModel()
     asyncio.run(
-        run_operation(operation, application.state.settings, repo, model if notes or quiz else None)
+        run_operation(
+            operation, application.state.settings, repo, model if notes or quiz else None, asr
+        )
     )
     finished = study.operation(task_id, operation.id)
     assert finished.status == "succeeded", finished.error
@@ -35,3 +76,4 @@ def test_optional_pipeline_publishes_only_requested_results(application, notes, 
     if not notes and not quiz:
         assert not model.requests
     assert (study.state(task_id).notes_revision_id is not None) == notes
+    assert len(asr.calls) == (1 if kind == "video" else 0)

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { friendlyError, getOperations, getStudyState, submitOperation } from "../api/client";
+import { friendlyError, getOperations, getStudyState, jsonRequest, submitOperation } from "../api/client";
 import type { CourseStudyState, StudyOperation } from "../api/client";
 
 export default function StudyActions({ id, onCompleted, options }: { id: string; onCompleted: () => void; options: { difficulty: "easy" | "medium" | "hard"; output_language: string } }) {
@@ -27,8 +27,9 @@ export default function StudyActions({ id, onCompleted, options }: { id: string;
     if (!state?.transcript_snapshot_id) return;
     setSending(true); setError("");
     try {
+      const saved = kind === "generate_notes" ? await jsonRequest<{ preferences: Extract<StudyOperation["request"], { kind: "generate_notes" }>["preferences"] } | null>(`/api/tasks/${id}/note-preferences`) : null;
       const action = { kind, transcript_snapshot_id: state.transcript_snapshot_id,
-        ...(kind === "generate_quiz" ? { notes_revision_id: state.notes_revision_id, options: { question_count: 5, difficulty: options.difficulty, output_language: options.output_language } } : { output_language: options.output_language, preferences: { detail: "standard", style: "outline", include_examples: false, highlight_formulas: true, focus_topics: [], custom_instructions: "" } }) } as StudyOperation["request"];
+        ...(kind === "generate_quiz" ? { notes_revision_id: state.notes_revision_id, options: { question_count: 5, difficulty: options.difficulty, output_language: options.output_language } } : { output_language: options.output_language, preferences: saved?.preferences || { detail: "standard", style: "outline", include_examples: false, highlight_formulas: true, focus_topics: [], custom_instructions: "" } }) } as StudyOperation["request"];
       const op = await submitOperation(id, action);
       setOperations(ops => [op, ...ops]); previous.current.set(op.id, "queued");
     } catch (failure) { setError(friendlyError(failure)); }

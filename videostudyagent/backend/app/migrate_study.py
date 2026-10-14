@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from app.core.config import Settings
 from app.core.locking import native_lock
+from app.db.iteration_models import OperationRow
 from app.db.models import TaskRow
 from app.db.repository import initialize_database
 from app.db.study_repository import StudyRepository
@@ -31,7 +32,17 @@ def migrate(settings):
                 tasks = connection.scalars(select(TaskRow.id)).all()
             importer = LegacyStudyImporter(settings.data_dir, StudyRepository(engine))
             for task_id in tasks:
-                importer.import_task(task_id)
+                with engine.connect() as connection:
+                    native = connection.scalar(
+                        select(OperationRow.id)
+                        .where(
+                            OperationRow.task_id == task_id,
+                            OperationRow.idempotency_key.like("initial:%"),
+                        )
+                        .limit(1)
+                    )
+                if native is None:
+                    importer.import_task(task_id)
         finally:
             engine.dispose()
     return len(tasks)

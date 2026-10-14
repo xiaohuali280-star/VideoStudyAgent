@@ -168,8 +168,13 @@ class ResultService:
         if format not in FORMATS:
             raise StudyError("NOT_FOUND", "未找到该导出格式。", 404)
         task = self.repository.get(task_id)
-        result = self.result(task_id)
         selection = quiz_batch_id or notes_revision_id
+        if (
+            (quiz_batch_id and notes_revision_id)
+            or (quiz_batch_id and not format.startswith("quiz"))
+            or (notes_revision_id and format != "notes.md")
+        ):
+            raise StudyError("VALIDATION_ERROR", "导出格式与所选资料版本不匹配。", 422)
         if selection:
             study = StudyRepository(self.repository.engine)
             reader = VersionReader(self.store.root)
@@ -179,16 +184,31 @@ class ResultService:
                 else study.notes(task_id, notes_revision_id)
             )
             transcript = reader.transcript(study.snapshot(task_id, record.transcript_snapshot_id))
-            result = result.model_copy(
-                update={
-                    "transcript": transcript,
-                    **(
-                        {"quiz": reader.quiz(record)}
-                        if quiz_batch_id
-                        else {"notes": reader.notes(record)}
+            if quiz_batch_id:
+                document = reader.quiz(record)
+                basis = (
+                    reader.notes(study.notes(task_id, record.notes_revision_id))
+                    if record.notes_revision_id
+                    else None
+                )
+                validate_quiz(
+                    document,
+                    transcript,
+                    basis,
+                    task.options.model_copy(
+                        update={
+                            "question_count": record.question_count,
+                            "difficulty": record.difficulty,
+                        }
                     ),
-                }
-            )
+                )
+                result = StudyResult(task_id=task.id, transcript=transcript, quiz=document)
+            else:
+                document = reader.notes(record)
+                validate_notes(document, transcript)
+                result = StudyResult(task_id=task.id, transcript=transcript, notes=document)
+        else:
+            result = self.result(task_id)
         required = (
             "notes"
             if format == "notes.md"

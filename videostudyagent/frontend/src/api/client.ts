@@ -24,6 +24,10 @@ export class ApiError extends Error {
 }
 
 const messages: Record<string, string> = {
+  BUDGET_PREFLIGHT: "剩余预算不足，请缩短课程字幕后另建课程。",
+  CONTEXT_LIMIT: "所选内容超过模型上下文，请缩小章节范围。",
+  STUDY_CONFLICT: "版本或状态已变化，请刷新并重新核对。",
+  GENERATION_INVALID: "模型结果未通过校验，可查看操作记录并手动重试。",
   MIGRATION_REQUIRED: "现有课程库需要先备份升级，请查看本地启动指南。",
   UPLOAD_TOO_LARGE: "文件超过上传大小限制。", UNSUPPORTED_MEDIA: "请选择有效的 MP4、SRT 或 VTT 文件。",
   INVALID_SUBTITLE: "字幕格式或编码无效，请检查文件。", EMPTY_UPLOAD: "文件不能为空。",
