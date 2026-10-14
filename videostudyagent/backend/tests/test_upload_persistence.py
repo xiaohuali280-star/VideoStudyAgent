@@ -30,10 +30,10 @@ def upload(app, files=None, **kwargs):
     ],
 )
 def test_input_combinations_survive_api_restart(application, files):
-    response = upload(application, files, data={"options": json.dumps({"question_count": 1})})
+    response = upload(application, files, data={"options": json.dumps({"question_count": 5})})
     assert response.status_code == 202, response.text
     task = response.json()
-    assert task["status"] == "queued" and task["options"]["question_count"] == 1
+    assert task["status"] == "queued" and task["options"]["question_count"] == 5
     repo = application.state.repository
     assert len(repo.assets(task["id"])) == len(files)
     repo.engine.dispose()

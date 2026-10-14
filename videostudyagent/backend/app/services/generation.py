@@ -12,7 +12,7 @@ from app.prompts.study import DIFFICULTY, NOTE_SYSTEM, PROMPT_VERSION, QUIZ_SYST
 from app.providers.budget import BoundedLLM
 from app.providers.deepseek import DeepSeekClient
 from app.schemas.providers import ChatMessage, ModelRequest
-from app.schemas.study import NotesDocument, QuizDocument, Transcript
+from app.schemas.study import NotesDocument, QuizDocument, QuizDocumentV11, QuizPartV11, Transcript
 from app.schemas.tasks import Task
 from app.services.storage import ArtifactStore, cache_key
 from app.vendor.deeptutor.json_output import extract_json_object
@@ -147,22 +147,26 @@ class GenerationService:
         return self.store.put_json(task.id, "notes", result, key)
 
     async def generate_quiz(self, task: Task):
-        source, note_artifact = self._artifact(task, "transcript"), self._artifact(task, "notes")
+        source = self._artifact(task, "transcript")
+        note_artifact = next(
+            (a for a in self.repository.artifacts(task.id) if a.kind == "notes"), None
+        )
         transcript = self.store.read_json(source, Transcript)
-        notes = self.store.read_json(note_artifact, NotesDocument)
-        validate_notes(notes, transcript)
+        notes = self.store.read_json(note_artifact, NotesDocument) if note_artifact else None
+        if notes:
+            validate_notes(notes, transcript)
+        from app.services.quiz_documents import QuizReader
+
         key = cache_key(
             tool="quiz-v1",
             transcript=source.sha256,
-            notes=note_artifact.sha256,
+            notes=note_artifact.sha256 if note_artifact else None,
             options=task.options.model_dump(),
             **self._model_key(),
         )
-        cached = self.store.reuse(task.id, "quiz", key, QuizDocument)
+        cached = self.store.reuse(task.id, "quiz", key, QuizReader)
         if cached:
-            validate_quiz(
-                self.store.read_json(cached, QuizDocument), transcript, notes, task.options
-            )
+            validate_quiz(self.store.read_json(cached, QuizReader), transcript, notes, task.options)
             return cached
         chunks = self._chunks(task, transcript)
         count = task.options.question_count
@@ -179,7 +183,7 @@ class GenerationService:
                 options = task.options.model_copy(update={"question_count": batch_size})
                 chapters = [
                     chapter
-                    for chapter in notes.chapters
+                    for chapter in (notes.chapters if notes else [])
                     if set(chapter.source_segment_ids) & set(chunk.source_segment_ids)
                 ]
                 data = {
@@ -201,14 +205,20 @@ class GenerationService:
                     if any(normalized(q.question) in previous for q in result.questions):
                         raise ValueError("Question duplicates a previous batch")
 
-                result = await self._structured(QUIZ_SYSTEM, data, QuizDocument, validate)
+                result = await self._structured(
+                    QUIZ_SYSTEM
+                    + ("\nNo chapters supplied: chapter_id must be null." if not notes else ""),
+                    data,
+                    QuizDocument if notes else QuizPartV11,
+                    validate,
+                )
                 questions.extend(result.questions)
                 quota -= batch_size
         questions = [
             question.model_copy(update={"id": f"q_{index:05d}"})
             for index, question in enumerate(questions, 1)
         ]
-        result = QuizDocument(
+        result = (QuizDocument if notes else QuizDocumentV11)(
             question_count=count, difficulty=task.options.difficulty, questions=questions
         )
         validate_quiz(result, transcript, notes, task.options)

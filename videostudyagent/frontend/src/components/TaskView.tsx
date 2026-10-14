@@ -5,6 +5,7 @@ import { useTask } from "../hooks/useTask";
 import NotesViewer from "./NotesViewer";
 import QuizViewer from "./QuizViewer";
 import { clock } from "./Sources";
+import StudyActions from "./StudyActions";
 
 export const statusLabels = { queued: "等待处理", running: "正在整理", succeeded: "已完成", failed: "处理未完成" };
 const stepLabels: Record<string, string> = { load_subtitles: "读取字幕", extract_audio: "提取音频", transcribe_audio: "识别语音", generate_notes: "梳理笔记", generate_quiz: "生成自测", unknown: "检查调用" };
@@ -38,10 +39,12 @@ export default function TaskView({ id, onUpdated }: { id: string; onUpdated: () 
   return <section className="result-panel" aria-label="课程学习资料">
     <div className="course-heading"><div><div className="eyebrow">YOUR COURSE / STUDY NOTES</div><h1>{task.title}</h1></div><span className={`status-badge ${task.status}`} role="status">{statusLabels[task.status]}</span></div>
     <p className="muted">{task.options.question_count} 道简答题 · {{ easy: "基础理解", medium: "理解与应用", hard: "综合分析" }[task.options.difficulty]} · {task.options.output_language === "zh-CN" ? "简体中文" : task.options.output_language}</p>
+    <StudyActions id={id} onCompleted={() => { setRevision(v => v + 1); onUpdated(); }} />
     <ol className="progress-track" aria-label="处理进度">{phases.map(name => {
       const step = [...detail.steps].reverse().find(s => s.tool_name === name);
       const state = step?.status || "pending";
-      return <li key={name} className={state}><span className="progress-dot" /><span>{stepLabels[name]}</span><small>{{ pending: "待处理", running: "处理中", succeeded: "已完成", skipped: "已复用", failed: "未完成" }[state]}</small></li>;
+      const enabled = name === "generate_notes" ? task.options.generate_notes : name === "generate_quiz" ? task.options.generate_quiz : true;
+      return <li key={name} className={state}><span className="progress-dot" /><span>{stepLabels[name]}</span><small>{!enabled ? "未启用" : { pending: "待处理", running: "处理中", succeeded: "已完成", skipped: "已复用", failed: "未完成" }[state]}</small></li>;
     })}</ol>
     {task.status === "queued" && <p className="waiting-note">课程已保存，等待后台处理。</p>}
     {(task.error || error || actionError) && <div className="error-box" role="alert"><p>{actionError || error || task.error?.message}</p>{canRetry && <button type="button" className="secondary-button" disabled={busy} onClick={() => void retry()}>{busy ? "正在提交…" : "重试处理"}</button>}</div>}

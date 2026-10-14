@@ -23,14 +23,14 @@ class ScriptedStudyModel:
                     name, args = "extract_audio", {}
                 else:
                     name, args = "transcribe_audio", {"audio_artifact_id": artifacts["audio"]}
-            elif "notes" not in artifacts:
+            elif "notes" not in artifacts and state["options"].get("generate_notes", True):
                 name, args = "generate_notes", {"transcript_artifact_id": artifacts["transcript"]}
-            elif "quiz" not in artifacts:
+            elif "quiz" not in artifacts and state["options"].get("generate_quiz", True):
                 name, args = (
                     "generate_quiz",
                     {
                         "transcript_artifact_id": artifacts["transcript"],
-                        "notes_artifact_id": artifacts["notes"],
+                        "notes_artifact_id": artifacts.get("notes"),
                     },
                 )
             else:
@@ -67,7 +67,7 @@ class ScriptedStudyModel:
                     "id": f"q_{self.question_index}",
                     "type": "short_answer",
                     "difficulty": data["options"]["difficulty"],
-                    "chapter_id": data["chapters"][0]["id"],
+                    "chapter_id": data["chapters"][0]["id"] if data["chapters"] else None,
                     "question": f"Review concept {self.question_index}: what does the source say?",
                     "answer": segment["text"][:80],
                     "explanation": "The quoted source supports it.",

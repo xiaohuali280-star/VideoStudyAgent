@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, Self
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, StrictBool, model_validator
 
 from app.schemas.common import (
     ContentHash,
@@ -24,6 +24,8 @@ class StudyOptions(ContractModel):
     question_type: Literal["short_answer"] = "short_answer"
     output_language: LanguageCode = "zh-CN"
     transcript_language: LanguageCode | None = None
+    generate_notes: StrictBool = True
+    generate_quiz: StrictBool = True
 
 
 class TranscriptSegment(ContractModel):
@@ -137,3 +139,18 @@ class QuizDocument(DocumentModel):
         if len({question.id for question in self.questions}) != len(self.questions):
             raise ValueError("Question IDs must be unique")
         return self
+
+
+class QuestionV11(Question):
+    chapter_id: SegmentId | None = None
+
+
+class QuizDocumentV11(QuizDocument):
+    schema_version: Literal["1.1"] = "1.1"
+    question_count: Annotated[int, Field(strict=True, ge=5, le=5)] = 5
+    questions: Annotated[list[QuestionV11], Field(min_length=5, max_length=5)]
+
+
+class QuizPartV11(QuizDocument):
+    schema_version: Literal["1.1"] = "1.1"
+    questions: Annotated[list[QuestionV11], Field(min_length=1, max_length=20)]

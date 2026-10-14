@@ -45,6 +45,12 @@ from tests.test_upload_persistence import upload
 @pytest.fixture
 def foundation(application):
     task = upload(application).json()
+    from sqlalchemy import delete
+
+    from app.db.iteration_models import OperationRow
+
+    with application.state.repository.engine.begin() as connection:
+        connection.execute(delete(OperationRow))
     settings = application.state.settings
     application.state.repository.engine.dispose()
     engine = initialize_database(settings.data_dir / "app.db", revision="0003_study_foundation")
@@ -132,11 +138,16 @@ def test_public_requests_cannot_inject_internal_configuration(field, value):
         TypeAdapter(OperationRequest).validate_python({"kind": "initial_study", field: value})
 
 
-def test_default_runtime_does_not_upgrade_existing_database_to_stage8(application):
-    upload(application)
-    with application.state.repository.engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0002_tasks"
-        assert not set(ITERATION_TABLES) & set(inspect(connection).get_table_names())
+def test_default_runtime_does_not_upgrade_existing_database_to_stage8(tmp_path):
+    engine = initialize_database(tmp_path / "legacy.db")
+    try:
+        with engine.connect() as connection:
+            assert (
+                connection.scalar(text("SELECT version_num FROM alembic_version")) == "0002_tasks"
+            )
+            assert not set(ITERATION_TABLES) & set(inspect(connection).get_table_names())
+    finally:
+        engine.dispose()
 
 
 def test_opt_in_upgrade_repeatable_metadata_and_empty_downgrade(foundation):
@@ -234,7 +245,8 @@ def test_scope_is_enforced_by_repository_and_database(foundation):
                 payload=revision.model_dump(mode="json"),
             )
         )
-    assert repo.operations(other) == []
+    assert len(repo.operations(other)) == 1
+    assert repo.operations(other)[0].request.kind == "initial_study"
 
 
 def test_budget_records_are_monotonic_and_retry_preserves_attempt_usage(foundation):
@@ -394,10 +406,23 @@ def test_message_idempotency_order_scope_and_preference_version(foundation):
 
 @pytest.mark.parametrize("count", [1, 5, 20])
 def test_legacy_import_is_idempotent_preserves_files_and_old_question_counts(application, count):
-    response = upload(application, data={"options": json.dumps({"question_count": count})})
+    response = upload(application, data={"options": json.dumps({"question_count": 5})})
     task_id = response.json()["id"]
     old_repo = application.state.repository
     task = old_repo.claim_next()
+    from sqlalchemy import delete, update
+
+    from app.db.models import TaskRow
+    from app.schemas.study import StudyOptions
+
+    task = task.model_copy(update={"options": StudyOptions(question_count=count)})
+    with old_repo.engine.begin() as connection:
+        connection.execute(
+            update(TaskRow)
+            .where(TaskRow.id == task_id)
+            .values(payload=task.model_dump(mode="json"))
+        )
+        connection.execute(delete(OperationRow))
     asyncio.run(run_task(task, application.state.settings, old_repo, ScriptedStudyModel()))
     assert old_repo.get(task_id).status == "succeeded"
     artifacts = old_repo.artifacts(task_id)

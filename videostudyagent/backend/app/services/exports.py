@@ -3,13 +3,19 @@ import tempfile
 from pathlib import Path
 from typing import get_args
 
+from sqlalchemy import inspect
+
 from app.adapters.grounding import validate_notes, validate_quiz
 from app.core.errors import StudyError
 from app.db.repository import TaskRepository
+from app.db.study_repository import StudyRepository
 from app.schemas.common import ExportFormat
+from app.schemas.iteration import ProcessingOptions
 from app.schemas.study import NotesDocument, QuizDocument, Transcript
 from app.schemas.tasks import ArtifactSummary, StudyResult
+from app.services.quiz_documents import QuizReader
 from app.services.storage import ArtifactStore
+from app.services.study_versions import VersionReader
 
 FORMATS = set(get_args(ExportFormat))
 
@@ -84,21 +90,60 @@ class ResultService:
 
     def result(self, task_id):
         task = self.repository.get(task_id)
+        if "course_study_states" in inspect(self.repository.engine).get_table_names():
+            study = StudyRepository(self.repository.engine)
+            state = study.state(task_id)
+            if state.transcript_snapshot_id:
+                reader = VersionReader(self.store.root)
+                source = study.snapshot(task_id, state.transcript_snapshot_id)
+                transcript = reader.transcript(source)
+                notes = (
+                    reader.notes(study.notes(task_id, state.notes_revision_id))
+                    if state.notes_revision_id
+                    else None
+                )
+                quiz = None
+                if notes:
+                    validate_notes(notes, transcript)
+                if state.quiz_batch_id:
+                    batch = study.batch(task_id, state.quiz_batch_id)
+                    quiz = reader.quiz(batch)
+                    basis = (
+                        reader.notes(study.notes(task_id, batch.notes_revision_id))
+                        if batch.notes_revision_id
+                        else None
+                    )
+                    validate_quiz(
+                        quiz,
+                        transcript,
+                        basis,
+                        task.options.model_copy(
+                            update={
+                                "question_count": batch.question_count,
+                                "difficulty": batch.difficulty,
+                            }
+                        ),
+                    )
+                return StudyResult(task_id=task.id, transcript=transcript, notes=notes, quiz=quiz)
         artifacts = {artifact.kind: artifact for artifact in self.repository.artifacts(task_id)}
         values = {}
         try:
             for kind, schema in [
                 ("transcript", Transcript),
                 ("notes", NotesDocument),
-                ("quiz", QuizDocument),
+                ("quiz", QuizReader),
             ]:
                 if kind in artifacts:
                     values[kind] = self.store.read_json(artifacts[kind], schema)
             if "notes" in values:
                 validate_notes(values["notes"], values["transcript"])
             if "quiz" in values:
-                validate_quiz(values["quiz"], values["transcript"], values["notes"], task.options)
-            if task.status == "succeeded" and set(values) != {"transcript", "notes", "quiz"}:
+                validate_quiz(
+                    values["quiz"], values["transcript"], values.get("notes"), task.options
+                )
+            if task.status == "succeeded" and not ProcessingOptions(
+                generate_notes=task.options.generate_notes, generate_quiz=task.options.generate_quiz
+            ).required_artifacts() <= set(values):
                 raise ValueError("Completed task has missing artifacts")
         except (ValueError, KeyError) as exc:
             raise StudyError(

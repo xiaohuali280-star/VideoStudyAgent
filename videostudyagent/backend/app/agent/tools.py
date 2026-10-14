@@ -8,10 +8,12 @@ from app.adapters.tool_args import missing_args_message, unsatisfied_required_ar
 from app.core.errors import StudyError
 from app.db.repository import now
 from app.schemas.common import ContractModel, ErrorInfo
+from app.schemas.iteration import ProcessingOptions
 from app.schemas.providers import ToolCall, ToolDefinition
-from app.schemas.study import NotesDocument, QuizDocument, Transcript
+from app.schemas.study import NotesDocument, Transcript
 from app.schemas.tasks import TaskStep
 from app.services.generation import GenerationService
+from app.services.quiz_documents import QuizReader
 from app.services.transcription import TranscriptService
 
 
@@ -28,7 +30,7 @@ class TranscriptArgs(ContractModel):
 
 
 class QuizArgs(TranscriptArgs):
-    notes_artifact_id: UUID
+    notes_artifact_id: UUID | None = None
 
 
 SPECS = {
@@ -53,9 +55,9 @@ SPECS = {
     ),
     "generate_quiz": (
         QuizArgs,
-        "从已验证 transcript 和 notes 生成 quiz，选项由服务端固定。",
+        "从 transcript 生成 quiz；notes_artifact_id 可选，不得隐式生成笔记。",
         "quiz",
-        {"transcript_artifact_id": "transcript", "notes_artifact_id": "notes"},
+        {"transcript_artifact_id": "transcript"},
     ),
 }
 
@@ -71,7 +73,7 @@ class StudyTools:
     def __init__(self, task, settings, repository, llm, asr=None):
         self.task, self.settings, self.repository = task, settings, repository
         self.transcription = TranscriptService(settings, repository, asr)
-        self.generation = GenerationService(settings, repository, llm)
+        self.generation = GenerationService(settings, repository, llm) if llm else None
         self.store = self.transcription.store
 
     def valid_artifacts(self):
@@ -81,7 +83,7 @@ class StudyTools:
             ("audio", None),
             ("transcript", Transcript),
             ("notes", NotesDocument),
-            ("quiz", QuizDocument),
+            ("quiz", QuizReader),
         ]:
             if kind not in stored:
                 continue
@@ -93,7 +95,10 @@ class StudyTools:
                         validate_notes(value, documents["transcript"])
                     if kind == "quiz":
                         validate_quiz(
-                            value, documents["transcript"], documents["notes"], self.task.options
+                            value,
+                            documents["transcript"],
+                            documents.get("notes"),
+                            self.task.options,
                         )
                     documents[kind] = value
                 else:
@@ -109,11 +114,29 @@ class StudyTools:
             "has_subtitle": "subtitle" in assets,
             "has_video": "video" in assets,
             "options": self.task.options.model_dump(),
+            "required_artifacts": sorted(self.required()),
             "artifacts": {kind: str(item.id) for kind, item in self.valid_artifacts().items()},
         }
 
     def complete(self):
-        return {"transcript", "notes", "quiz"} <= self.valid_artifacts().keys()
+        return self.required() <= self.valid_artifacts().keys()
+
+    def required(self):
+        return ProcessingOptions(
+            generate_notes=self.task.options.generate_notes,
+            generate_quiz=self.task.options.generate_quiz,
+        ).required_artifacts()
+
+    def definitions(self):
+        return [
+            item
+            for item in definitions()
+            if item.name
+            not in {
+                *(["generate_notes"] if not self.task.options.generate_notes else []),
+                *(["generate_quiz"] if not self.task.options.generate_quiz else []),
+            }
+        ]
 
     async def execute(self, call: ToolCall, sequence: int):
         start = monotonic()
@@ -131,6 +154,8 @@ class StudyTools:
         try:
             if name == "unknown":
                 raise StudyError("UNKNOWN_TOOL", "工具不在允许列表中。", 422)
+            if name not in {item.name for item in self.definitions()}:
+                raise StudyError("TOOL_FORBIDDEN", "本次操作未启用该工具。", 422)
             schema, _, output_kind, required = SPECS[name]
             definition = next(item for item in definitions() if item.name == name)
             absent, blank = unsatisfied_required_args(definition, call.arguments)
@@ -145,6 +170,9 @@ class StudyTools:
                     "INVALID_TOOL_ARGUMENTS", "参数类型错误或包含额外字段。", 422
                 ) from None
             available = self.valid_artifacts()
+            if name == "generate_quiz" and arguments.notes_artifact_id is not None:
+                if "notes" not in available or available["notes"].id != arguments.notes_artifact_id:
+                    raise StudyError("TOOL_FORBIDDEN", "笔记版本不属于本次操作。", 422)
             for field, kind in required.items():
                 if kind not in available:
                     raise StudyError("TOOL_PRECONDITION", "所需产物尚未完成。", 409)

@@ -142,7 +142,7 @@
       "commit": "6cf793bd868ba5ecbe64722936d4be8fab5a01df",
       "license": "Apache-2.0",
       "status": "adopted",
-      "changes": "Retains whitespace normalization with source position mapping. Changed evidence comparison to per-segment matches, preserving numbers/hyphens and numeric boundaries; dynamic short-answer counts, chapter membership and duplicate checks; no 6000-char truncation.",
+      "changes": "Retains whitespace normalization with source position mapping. Changed evidence comparison to per-segment matches, preserving numbers/hyphens and numeric boundaries; dynamic short-answer counts, chapter membership and duplicate checks; no 6000-char truncation. Stage 9: allow subtitle-only quiz grounding without inventing chapter references.",
       "tests": [
         "test_grounding_preserves_math_and_negative_numbers",
         "test_foreign_sources_and_duplicate_questions_are_rejected"
@@ -162,7 +162,7 @@
       "local_files": [
         {
           "path": "backend/app/adapters/grounding.py",
-          "sha256": "774b3af7c5fb91072c6257b10b005f18b757eda0f3551662e2a2ee931c8997da"
+          "sha256": "e8df94bc91d21400d7cd3d2f86b3f2b63a63d9150272b75fb8dc3d2cee645cfb"
         }
       ]
     },

@@ -134,7 +134,12 @@ def main():
             try:
                 repository.recover_interrupted()
                 cleanup_temporary(settings, repository)
-                worker = Worker(settings, repository)
+                from app.operation_worker import OperationWorker
+                from app.services.operations import ensure_study_schema
+
+                ensure_study_schema(settings, repository.engine)
+                worker = OperationWorker(settings, repository)
+                worker.recover()
                 while True:
                     processed = worker.run_once()
                     if args.once:

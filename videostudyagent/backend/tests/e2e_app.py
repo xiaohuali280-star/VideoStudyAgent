@@ -10,8 +10,8 @@ from app.core.config import PROJECT_ROOT, Settings
 from app.core.locking import native_lock
 from app.db.repository import TaskRepository, initialize_database
 from app.main import create_app
-from app.task_runner import run_task
-from app.worker import Worker
+from app.operation_worker import OperationWorker
+from app.services.operations import ensure_study_schema, run_operation
 from tests.scripted_llm import ScriptedStudyModel
 
 if os.environ.get("VSA_E2E") != "1":
@@ -29,13 +29,15 @@ async def lifespan(application):
     stop = threading.Event()
     repo = TaskRepository(initialize_database(settings.data_dir / "app.db"))
 
+    ensure_study_schema(settings, repo.engine)
+
     def process():
         with native_lock(settings.data_dir / ".worker.lock"):
             repo.recover_interrupted()
-            worker = Worker(
+            worker = OperationWorker(
                 settings,
                 repo,
-                lambda task: asyncio.run(run_task(task, settings, repo, ScriptedStudyModel())),
+                lambda task: asyncio.run(run_operation(task, settings, repo, ScriptedStudyModel())),
             )
             while not stop.is_set():
                 if not worker.run_once():

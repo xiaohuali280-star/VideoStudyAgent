@@ -14,7 +14,7 @@ from app.providers.budget import BoundedLLM
 from app.providers.deepseek import DeepSeekClient
 from app.providers.fakes import FakeLLM
 from app.schemas.providers import ChatMessage, ModelReply, ModelRequest, ToolDefinition
-from app.schemas.study import NotesDocument, QuizDocument, Transcript
+from app.schemas.study import NotesDocument, QuizDocument, StudyOptions, Transcript
 from app.services.generation import GenerationService
 from app.services.transcription import TranscriptService
 from tests.scripted_llm import ScriptedStudyModel
@@ -28,12 +28,14 @@ def prepared(application, count=5, difficulty="medium", text=None):
         files,
         data={
             "options": json.dumps(
-                {"question_count": count, "difficulty": difficulty},
+                {"question_count": 5, "difficulty": difficulty},
             )
         },
     ).json()
     repo = application.state.repository
-    task = repo.get(task["id"])
+    task = repo.get(task["id"]).model_copy(
+        update={"options": StudyOptions(question_count=count, difficulty=difficulty)}
+    )
     TranscriptService(application.state.settings, repo).load_subtitles(task)
     return task, repo
 

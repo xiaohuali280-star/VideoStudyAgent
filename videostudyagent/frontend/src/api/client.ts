@@ -7,7 +7,13 @@ export type StudyResult = components["schemas"]["StudyResult"];
 export type StudyOptions = components["schemas"]["StudyOptions"];
 export type PublicConfig = components["schemas"]["PublicConfig"];
 export type NotesDocument = components["schemas"]["NotesDocument"];
-export type QuizDocument = components["schemas"]["QuizDocument"];
+export type QuizDocument = components["schemas"]["QuizDocument"] | components["schemas"]["QuizDocumentV11"];
+export type StudyOperation = components["schemas"]["StudyOperation"];
+export type CourseStudyState = components["schemas"]["CourseStudyState"];
+export const getStudyState = (id: string) => jsonRequest<CourseStudyState>(`/api/tasks/${id}/study-state`);
+export const getOperations = (id: string) => jsonRequest<StudyOperation[]>(`/api/tasks/${id}/operations`);
+export const submitOperation = (id: string, request: StudyOperation["request"], key = crypto.randomUUID()) =>
+  jsonRequest<StudyOperation>(`/api/tasks/${id}/operations`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(request) });
 export type Transcript = components["schemas"]["Transcript"];
 export type ExportFormat = PublicConfig["export_formats"][number];
 
@@ -18,6 +24,7 @@ export class ApiError extends Error {
 }
 
 const messages: Record<string, string> = {
+  MIGRATION_REQUIRED: "现有课程库需要先备份升级，请查看本地启动指南。",
   UPLOAD_TOO_LARGE: "文件超过上传大小限制。", UNSUPPORTED_MEDIA: "请选择有效的 MP4、SRT 或 VTT 文件。",
   INVALID_SUBTITLE: "字幕格式或编码无效，请检查文件。", EMPTY_UPLOAD: "文件不能为空。",
   VALIDATION_ERROR: "请检查题数、难度和课程标题。", INPUT_REQUIRED: "请选择视频或字幕文件。",

@@ -5,21 +5,20 @@ import type { PublicConfig, StudyOptions, Task } from "../api/client";
 
 export default function UploadForm({ config, onCreated }: { config: PublicConfig; onCreated: (task: Task) => void }) {
   const [video, setVideo] = useState<File>(), [subtitle, setSubtitle] = useState<File>();
-  const [title, setTitle] = useState(""), [count, setCount] = useState("5");
+  const [title, setTitle] = useState(""), [notes, setNotes] = useState(true), [quiz, setQuiz] = useState(true);
   const [difficulty, setDifficulty] = useState<StudyOptions["difficulty"]>("medium");
   const [language, setLanguage] = useState("zh-CN"), [spoken, setSpoken] = useState("");
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   async function submit(event: FormEvent) {
     event.preventDefault(); setError("");
     if (!video && !subtitle) { setError("请选择视频或字幕文件。"); return; }
-    if (!Number.isInteger(Number(count)) || Number(count) < 1 || Number(count) > 20) { setError("题数应为 1–20 的整数。"); return; }
     if (video && (!/\.mp4$/i.test(video.name) || video.size > config.max_video_bytes)) { setError("视频格式或大小不符合要求。"); return; }
     if (subtitle && (!/\.(srt|vtt)$/i.test(subtitle.name) || subtitle.size > config.max_subtitle_bytes)) { setError("字幕格式或大小不符合要求。"); return; }
     const body = new FormData();
     if (video) body.append("video", video);
     if (subtitle) body.append("subtitle", subtitle);
     if (title.trim()) body.append("title", title.trim());
-    body.append("options", JSON.stringify({ question_count: Number(count), difficulty,
+    body.append("options", JSON.stringify({ question_count: 5, generate_notes: notes, generate_quiz: quiz, difficulty,
       output_language: language, transcript_language: spoken || null }));
     setBusy(true);
     try { onCreated(await createTask(body)); } catch (failure) { setError(friendlyError(failure)); }
@@ -31,7 +30,7 @@ export default function UploadForm({ config, onCreated }: { config: PublicConfig
     <div className="file-grid"><div className="file-field"><label htmlFor="video-file">课程视频（MP4，可选）</label><input id="video-file" type="file" accept=".mp4,video/mp4" disabled={busy} onChange={e => setVideo(e.target.files?.[0])} /><small>最大 {Math.round(config.max_video_bytes / 1048576)} MiB</small></div>
       <div className="file-field"><label htmlFor="subtitle-file">字幕文件（SRT / VTT，可选）</label><input id="subtitle-file" type="file" accept=".srt,.vtt" disabled={busy} onChange={e => setSubtitle(e.target.files?.[0])} /><small>最大 {Math.round(config.max_subtitle_bytes / 1048576)} MiB</small></div></div>
     <p className="field-hint">至少选择一种文件；同时提供时优先使用字幕，跳过语音识别。课程最长 {Math.round(config.max_duration_ms / 60000)} 分钟。</p>
-    <div className="options-grid"><div><label htmlFor="question-count">自测题数</label><input id="question-count" type="number" min={1} max={20} step={1} required value={count} disabled={busy} onChange={e => setCount(e.target.value)} /></div>
+    <div className="processing-options"><label><input type="checkbox" checked={notes} disabled={busy} onChange={e => setNotes(e.target.checked)} /> 梳理笔记</label><label><input type="checkbox" checked={quiz} disabled={busy} onChange={e => setQuiz(e.target.checked)} /> 生成自测（每批 5 题）</label><p className="field-hint">字幕始终自动准备；两项都关闭时仅保存字幕结果。</p></div><div className="options-grid">
       <div><label htmlFor="difficulty">难度</label><select id="difficulty" value={difficulty} disabled={busy} onChange={e => setDifficulty(e.target.value as StudyOptions["difficulty"])}><option value="easy">基础理解</option><option value="medium">理解与应用</option><option value="hard">综合分析</option></select></div>
       <div><label htmlFor="output-language">资料语言</label><select id="output-language" value={language} disabled={busy} onChange={e => setLanguage(e.target.value)}><option value="zh-CN">简体中文</option><option value="en">English</option></select></div>
       <div><label htmlFor="spoken-language">课程语种</label><select id="spoken-language" value={spoken} disabled={busy} onChange={e => setSpoken(e.target.value)}><option value="">自动识别</option><option value="zh">中文</option><option value="en">English</option></select></div></div>

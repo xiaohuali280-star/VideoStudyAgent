@@ -58,12 +58,14 @@ def validate_quiz(
     if quiz.question_count != options.question_count or quiz.difficulty != options.difficulty:
         raise ValueError("Quiz must match the immutable options")
     sources = {segment.id: segment.text for segment in transcript.segments}
-    chapters = {chapter.id: chapter for chapter in notes.chapters}
+    chapters = {chapter.id: chapter for chapter in notes.chapters} if notes else {}
     prompts = []
     for question in quiz.questions:
-        if question.chapter_id not in chapters:
+        if notes is None and question.chapter_id is not None:
+            raise ValueError("Subtitle-only questions cannot invent chapter IDs")
+        if notes is not None and question.chapter_id not in chapters:
             raise ValueError("Unknown chapter")
-        if not set(question.source_segment_ids) & set(
+        if notes is not None and not set(question.source_segment_ids) & set(
             chapters[question.chapter_id].source_segment_ids
         ):
             raise ValueError("Question must refer to its chapter")

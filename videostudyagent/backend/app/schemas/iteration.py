@@ -10,8 +10,7 @@ from app.schemas.study import (
     Difficulty,
     LanguageCode,
     NotesDocument,
-    Question,
-    QuizDocument,
+    QuizDocumentV11,
     SourceEvidence,
     StudyOptions,
 )
@@ -233,16 +232,6 @@ class ConversationMessage(IterationDocument):
 
 class NotesDocumentV11(NotesDocument):
     schema_version: Literal["1.1"] = "1.1"
-
-
-class QuestionV11(Question):
-    chapter_id: SegmentId | None = None
-
-
-class QuizDocumentV11(QuizDocument):
-    schema_version: Literal["1.1"] = "1.1"
-    question_count: Five = 5
-    questions: Annotated[list[QuestionV11], Field(min_length=5, max_length=5)]
 
 
 ITERATION_CONTRACTS = (

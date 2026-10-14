@@ -13,6 +13,7 @@ from app.api import router
 from app.core.config import Settings
 from app.core.errors import StudyError
 from app.core.upload_limit import UploadLimitMiddleware
+from app.routes.study import router as study_router
 from app.schemas.common import ErrorInfo, ErrorResponse, ExportFormat, HealthResponse, PublicConfig
 from app.schemas.iteration import ITERATION_CONTRACTS
 from app.schemas.providers import ModelReply, ModelRequest, ToolCall, ToolDefinition
@@ -67,6 +68,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     application.state.settings = settings
     application.include_router(router)
+    application.include_router(study_router)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

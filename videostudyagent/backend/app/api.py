@@ -12,6 +12,7 @@ from app.db.repository import TaskRepository, initialize_database
 from app.schemas.study import StudyOptions
 from app.schemas.tasks import StudyResult, Task, TaskDetail
 from app.services.exports import ResultService
+from app.services.operations import enqueue_initial, ensure_study_schema
 from app.services.storage import ArtifactStore
 from app.services.uploads import save_uploads
 
@@ -73,12 +74,16 @@ async def create_task(request: Request):
             raise StudyError("INVALID_UPLOAD", "上传字段类型错误。", 422)
     try:
         options = StudyOptions.model_validate_json(fields.get("options", "{}"))
+        if options.question_count != 5:
+            raise ValueError("New tasks require exactly five questions")
         title = fields.get("title", "").strip() or None
         if title and len(title) > 200:
             raise ValueError("title too long")
-        return await save_uploads(
-            request.app.state.settings, repository(request), files, options, title
-        )
+        settings, repo = request.app.state.settings, repository(request)
+        ensure_study_schema(settings, repo.engine)
+        task = await save_uploads(settings, repo, files, options, title)
+        enqueue_initial(task, settings, repo.engine)
+        return task
     except (ValidationError, ValueError) as exc:
         raise StudyError("VALIDATION_ERROR", "学习参数或标题不符合要求。", 422) from exc
     finally:
@@ -103,13 +108,16 @@ def retry_task(request: Request, task_id: UUID):
     if repo.get(task_id).status == "succeeded":
         try:
             value = ResultService(request.app.state.settings.data_dir, repo).result(task_id)
-            if not (value.transcript and value.notes and value.quiz):
+            if not value.transcript:
                 raise StudyError("STORAGE_ERROR", "学习资料不完整。", 409, True)
         except StudyError as exc:
             if exc.code != "STORAGE_ERROR":
                 raise
             repo.invalidate_completed(task_id)
-    return repo.retry(task_id)
+    task = repo.retry(task_id)
+    ensure_study_schema(request.app.state.settings, repo.engine)
+    enqueue_initial(task, request.app.state.settings, repo.engine)
+    return task
 
 
 @router.get("/{task_id}/result", response_model=StudyResult)
