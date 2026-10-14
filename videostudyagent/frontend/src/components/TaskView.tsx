@@ -6,6 +6,7 @@ import NotesViewer from "./NotesViewer";
 import QuizViewer from "./QuizViewer";
 import { clock } from "./Sources";
 import StudyActions from "./StudyActions";
+import OperationUsage from "./OperationUsage";
 import QuizBatches from "./QuizBatches";
 import type { QuizDocument } from "../api/client";
 
@@ -43,6 +44,7 @@ export default function TaskView({ id, onUpdated }: { id: string; onUpdated: () 
     <div className="course-heading"><div><div className="eyebrow">YOUR COURSE / STUDY NOTES</div><h1>{task.title}</h1></div><span className={`status-badge ${task.status}`} role="status">{statusLabels[task.status]}</span></div>
     <p className="muted">{task.options.question_count} 道简答题 · {{ easy: "基础理解", medium: "理解与应用", hard: "综合分析" }[task.options.difficulty]} · {task.options.output_language === "zh-CN" ? "简体中文" : task.options.output_language}</p>
     <StudyActions options={task.options} id={id} onCompleted={() => { setRevision(v => v + 1); onUpdated(); }} />
+    <OperationUsage id={id} />
     <ol className="progress-track" aria-label="处理进度">{phases.map(name => {
       const step = [...detail.steps].reverse().find(s => s.tool_name === name);
       const state = step?.status || "pending";

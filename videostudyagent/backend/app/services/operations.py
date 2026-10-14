@@ -10,6 +10,8 @@ from app.core.errors import StudyError
 from app.db.models import TaskRow
 from app.db.repository import initialize_database, now
 from app.db.study_repository import StudyRepository
+from app.providers.budget import BoundedLLM
+from app.providers.deepseek import DeepSeekClient
 from app.schemas.common import ErrorInfo
 from app.schemas.iteration import (
     InitialStudyRequest,
@@ -112,6 +114,42 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
     task = repository.get(operation.task_id)
     request = operation.request
     try:
+        bounded = None
+        if (
+            request.kind != "initial_study"
+            or request.processing.generate_notes
+            or request.processing.generate_quiz
+        ):
+            limits = settings.model_copy(
+                update={
+                    "llm_max_requests": min(
+                        settings.llm_max_requests, operation.usage.request_limit
+                    ),
+                    "llm_total_tokens": min(settings.llm_total_tokens, operation.usage.token_limit),
+                }
+            )
+            bounded = BoundedLLM(llm or DeepSeekClient(limits), limits)
+            bounded.requests_reserved = operation.usage.requests_reserved
+            bounded.tokens_reserved = operation.usage.tokens_reserved
+            bounded.actual_input_tokens = operation.usage.input_tokens or 0
+            bounded.actual_output_tokens = operation.usage.output_tokens or 0
+            bounded.usage_known = operation.usage.input_tokens is not None
+
+            def record(client):
+                repo.record_usage(
+                    task.id,
+                    operation.id,
+                    OperationUsage(
+                        request_limit=operation.usage.request_limit,
+                        token_limit=operation.usage.token_limit,
+                        requests_reserved=client.requests_reserved,
+                        tokens_reserved=client.tokens_reserved,
+                        input_tokens=client.actual_input_tokens if client.usage_known else None,
+                        output_tokens=client.actual_output_tokens if client.usage_known else None,
+                    ),
+                )
+
+            bounded.on_usage = record
         if operation.legacy_options is not None:
             raise StudyError(
                 "LEGACY_ACTION_REQUIRED", "旧待处理任务请重新确认生成选项后提交。", 409, True
@@ -160,7 +198,9 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
             for batch in repo.quiz_batches(task.id, limit=100)
             for q in reader.quiz(batch).questions
         ]
-        tools = await execute_study(task, settings, context, llm, asr)
+        tools = await execute_study(
+            task, bounded.settings if bounded else settings, context, bounded, asr
+        )
         artifacts = {item.kind: item for item in context.artifacts(task.id)}
         source_artifact = artifacts["transcript"]
         source = repo.add_snapshot(

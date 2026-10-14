@@ -346,3 +346,5 @@ Agent 不是一串伪装成 Agent 的固定函数调用：控制循环会接收�
 - FFmpeg 媒体处理能力：[ffmpeg Documentation](https://ffmpeg.org/ffmpeg.html)。
 
 2026-10-14：阶段 9、10 已完成离线实现及测试，详见 STAGE_9_REPORT.md、STAGE_10_REPORT.md。按最新授权继续 11–14。
+
+2026-10-14：阶段 11 已完成预算预检、分块断点及用量记录（47 项相关后端测试通过），见 STAGE_11_REPORT.md。

@@ -14,6 +14,7 @@ from app.providers.deepseek import DeepSeekClient
 from app.schemas.providers import ChatMessage, ModelRequest
 from app.schemas.study import NotesDocument, QuizDocument, QuizDocumentV11, QuizPartV11, Transcript
 from app.schemas.tasks import Task
+from app.services.checkpoints import NoteCheckpoints
 from app.services.storage import ArtifactStore, cache_key
 from app.vendor.deeptutor.json_output import extract_json_object
 
@@ -122,14 +123,45 @@ class GenerationService:
         if cached:
             validate_notes(self.store.read_json(cached, NotesDocument), transcript)
             return cached
+        checkpoints = NoteCheckpoints(self.settings.data_dir)
+        chunks = self._chunks(task, transcript)
         partials = []
-        for chunk in self._chunks(task, transcript):
+
+        def checkpoint_key(chunk):
+            return cache_key(parent=key, chunk=chunk.content_hash, strategy="notes-parts-v1")
+
+        def valid(chunk):
+            return lambda value: validate_notes(value, transcript, chunk.source_segment_ids)
+
+        saved = {
+            chunk.id: checkpoints.read(checkpoint_key(chunk), valid(chunk)) for chunk in chunks
+        }
+        self.llm.preflight(
+            [
+                ModelRequest(
+                    messages=messages(
+                        NOTE_SYSTEM,
+                        self._note_data(task, [p.model_dump() for p in chunk.parts]),
+                        NotesDocument,
+                    ),
+                    json_mode=True,
+                    max_output_tokens=self.settings.llm_max_output_tokens,
+                )
+                for chunk in chunks
+                if saved[chunk.id] is None
+            ]
+        )
+        for chunk in chunks:
+            if saved[chunk.id] is not None:
+                partials.append(saved[chunk.id])
+                continue
             result = await self._structured(
                 NOTE_SYSTEM,
                 self._note_data(task, [part.model_dump() for part in chunk.parts]),
                 NotesDocument,
                 lambda value: validate_notes(value, transcript, chunk.source_segment_ids),
             )
+            checkpoints.write(checkpoint_key(chunk), result)
             partials.append(result)
         chapters = [chapter for note in partials for chapter in note.chapters]
         chapters = [

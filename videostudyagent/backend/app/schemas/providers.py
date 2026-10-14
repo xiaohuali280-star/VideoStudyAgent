@@ -27,6 +27,7 @@ class ChatMessage(ContractModel):
 class ModelReply(ContractModel):
     content: str = ""
     tool_calls: list[ToolCall] = Field(default_factory=list)
+    usage_available: bool = False
     input_tokens: Milliseconds = 0
     output_tokens: Milliseconds = 0
 

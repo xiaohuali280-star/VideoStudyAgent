@@ -122,6 +122,7 @@ class DeepSeekClient:
                     return ModelReply(
                         content=message.get("content") or "",
                         tool_calls=calls,
+                        usage_available="prompt_tokens" in usage and "completion_tokens" in usage,
                         input_tokens=usage.get("prompt_tokens", 0),
                         output_tokens=usage.get("completion_tokens", 0),
                     )
