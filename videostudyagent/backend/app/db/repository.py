@@ -30,15 +30,35 @@ def now():
 
 def initialize_database(path: Path, *, revision: str = "0002_tasks") -> Engine:
     # Stage 8 is opt-in: existing API/Worker must not migrate a user's live database.
-    if revision not in {"0002_tasks", "0003_study_foundation"}:
+    if revision not in {
+        "0002_tasks",
+        "0003_study_foundation",
+        "0004_video_context",
+        "0005_quality_reviews",
+        "0006_evidence_index",
+        "0007_operation_events",
+    }:
         raise ValueError("Unknown schema target")
     engine = create_database_engine(path)
     config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
     try:
         with native_lock(path.parent / ".schema.lock", timeout=5).acquire():
-            with engine.begin() as connection:
-                config.attributes["connection"] = connection
-                command.upgrade(config, revision)
+            with engine.connect() as connection:
+                # Only explicit V3 targets rebuild tables. Existing default never does this.
+                rebuilding = revision not in {"0002_tasks", "0003_study_foundation"}
+                if rebuilding:
+                    connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+                    connection.commit()
+                try:
+                    with connection.begin():
+                        config.attributes["connection"] = connection
+                        command.upgrade(config, revision)
+                        if connection.exec_driver_sql("PRAGMA foreign_key_check").fetchone():
+                            raise ValueError("Migration violated source ownership")
+                finally:
+                    if rebuilding:
+                        connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+                        connection.commit()
     except Exception:
         engine.dispose()
         raise StudyError("STORAGE_ERROR", "数据库初始化未完成，请重试。", 503, True) from None
@@ -261,6 +281,9 @@ class TaskRepository:
                     payload=task.model_dump(mode="json"),
                 )
             )
+            from app.db.event_repository import step_event
+
+            step_event(connection, step)
 
     def save_artifact(self, artifact: Artifact):
         with self.engine.begin() as connection:

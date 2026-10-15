@@ -20,15 +20,17 @@ export default function StudyActions({ id, onCompleted, options }: { id: string;
       } catch (failure) { if (!stopped) setError(friendlyError(failure)); }
       if (!stopped) timer = setTimeout(refresh, 2000);
     }
-    void refresh(); return () => { stopped = true; clearTimeout(timer); };
+    const changed = (event: Event) => { if ((event as CustomEvent).detail?.id === id) { clearTimeout(timer); void refresh(); } };
+    window.addEventListener("vsa:operation-change", changed);
+    void refresh(); return () => { stopped = true; clearTimeout(timer); window.removeEventListener("vsa:operation-change", changed); };
   }, [id]);
   const busy = sending || operations.some(op => ["queued", "running"].includes(op.status));
   async function generate(kind: "generate_notes" | "generate_quiz") {
-    if (!state?.transcript_snapshot_id) return;
+    if ((!state?.transcript_snapshot_id && !state?.context_snapshot_id)) return;
     setSending(true); setError("");
     try {
       const saved = kind === "generate_notes" ? await jsonRequest<{ preferences: Extract<StudyOperation["request"], { kind: "generate_notes" }>["preferences"] } | null>(`/api/tasks/${id}/note-preferences`) : null;
-      const action = { kind, transcript_snapshot_id: state.transcript_snapshot_id,
+      const action = { kind, transcript_snapshot_id: state.transcript_snapshot_id, context_snapshot_id: state.context_snapshot_id,
         ...(kind === "generate_quiz" ? { notes_revision_id: state.notes_revision_id, options: { question_count: 5, difficulty: options.difficulty, output_language: options.output_language } } : { output_language: options.output_language, preferences: saved?.preferences || { detail: "standard", style: "outline", include_examples: false, highlight_formulas: true, focus_topics: [], custom_instructions: "" } }) } as StudyOperation["request"];
       const op = await submitOperation(id, action);
       setOperations(ops => [op, ...ops]); previous.current.set(op.id, "queued");
@@ -36,8 +38,8 @@ export default function StudyActions({ id, onCompleted, options }: { id: string;
     finally { setSending(false); }
   }
   return <div className="study-actions">
-    {state?.transcript_snapshot_id && !state.notes_revision_id && <button disabled={busy} onClick={() => void generate("generate_notes")}>补生成笔记</button>}
-    {state?.transcript_snapshot_id && !state.quiz_batch_id && <button disabled={busy} onClick={() => void generate("generate_quiz")}>生成 5 道自测题</button>}
+    {(state?.transcript_snapshot_id || state?.context_snapshot_id) && !state.notes_revision_id && <button disabled={busy} onClick={() => void generate("generate_notes")}>补生成笔记</button>}
+    {(state?.transcript_snapshot_id || state?.context_snapshot_id) && !state.quiz_batch_id && <button disabled={busy} onClick={() => void generate("generate_quiz")}>生成 5 道自测题</button>}
     {busy && <p className="muted" role="status">操作已排队或正在处理，原有资料仍可阅读。</p>}
     {error && <p role="alert">{error}</p>}
     {operations[0]?.status === "failed" && <p role="alert">{operations[0].error?.message}</p>}

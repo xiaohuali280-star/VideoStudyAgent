@@ -348,6 +348,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/{task_id}/contexts/{snapshot_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Context */
+        get: operations["context_api_tasks__task_id__contexts__snapshot_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/contexts/{snapshot_id}/frames/{frame_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Frame */
+        get: operations["frame_api_tasks__task_id__contexts__snapshot_id__frames__frame_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/operations/{operation_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reviews */
+        get: operations["reviews_api_tasks__task_id__operations__operation_id__reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/evidence/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search */
+        post: operations["search_api_tasks__task_id__evidence_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Events */
+        get: operations["events_api_tasks__task_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -408,7 +493,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "audio" | "transcript" | "notes" | "quiz";
+            kind: "audio" | "transcript" | "notes" | "quiz" | "context";
             /**
              * Created At
              * Format: date-time
@@ -417,6 +502,12 @@ export interface components {
         };
         /** ChatReplyRequest */
         "ChatReplyRequest-Input": {
+            /**
+             * Scope
+             * @default selected_chapters
+             * @enum {string}
+             */
+            scope: "selected_chapters" | "course_retrieval";
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -440,6 +531,12 @@ export interface components {
         /** ChatReplyRequest */
         "ChatReplyRequest-Output": {
             /**
+             * Scope
+             * @default selected_chapters
+             * @enum {string}
+             */
+            scope: "selected_chapters" | "course_retrieval";
+            /**
              * Kind
              * @default chat_reply
              * @constant
@@ -459,6 +556,22 @@ export interface components {
             chapter_ids: string[];
             /** Message */
             message: string;
+        };
+        /** ContextChapter */
+        ContextChapter: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Content Markdown */
+            content_markdown: string;
+            /**
+             * Source Segment Ids
+             * @default []
+             */
+            source_segment_ids: string[];
+            /** Source Refs */
+            source_refs: components["schemas"]["EvidenceRef"][];
         };
         /** Conversation */
         Conversation: {
@@ -489,9 +602,9 @@ export interface components {
             /**
              * Schema Version
              * @default 1.1
-             * @constant
+             * @enum {string}
              */
-            schema_version: "1.1";
+            schema_version: "1.1" | "1.2";
             /**
              * Id
              * Format: uuid
@@ -537,7 +650,7 @@ export interface components {
              */
             created_at: string;
             /** Citations */
-            citations: components["schemas"]["SourceEvidence"][];
+            citations: (components["schemas"]["SourceEvidence"] | components["schemas"]["EvidenceRef"])[];
         };
         /** CourseNotePreferences */
         CourseNotePreferences: {
@@ -583,6 +696,11 @@ export interface components {
              */
             transcript_snapshot_id: string | null;
             /**
+             * Context Snapshot Id
+             * @default null
+             */
+            context_snapshot_id: string | null;
+            /**
              * Notes Revision Id
              * @default null
              */
@@ -620,18 +738,163 @@ export interface components {
             schema_version: "1.0";
             error: components["schemas"]["ErrorInfo"];
         };
+        /** EvidenceFrame */
+        EvidenceFrame: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Video Asset Sha256 */
+            video_asset_sha256: string;
+            /** Timestamp Ms */
+            timestamp_ms: number;
+            /** Storage Key */
+            storage_key: string;
+            /** Sha256 */
+            sha256: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /**
+             * Extract Version
+             * @default pts-scene-v1
+             * @constant
+             */
+            extract_version: "pts-scene-v1";
+        };
+        /** EvidenceHit */
+        EvidenceHit: {
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Snapshot Id
+             * Format: uuid
+             */
+            snapshot_id: string;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "transcript" | "ocr";
+            /** Source Id */
+            source_id: string;
+            /** Start Ms */
+            start_ms: number;
+            /** End Ms */
+            end_ms: number;
+            /** Raw Text */
+            raw_text: string;
+            /** Frame Id */
+            frame_id: string | null;
+            /** Score Components */
+            score_components: {
+                [key: string]: number;
+            };
+        };
+        /** EvidenceQuery */
+        EvidenceQuery: {
+            /**
+             * Snapshot Id
+             * Format: uuid
+             */
+            snapshot_id: string;
+            /**
+             * Snapshot Type
+             * @enum {string}
+             */
+            snapshot_type: "transcript" | "context";
+            /** Notes Revision Id */
+            notes_revision_id?: string | null;
+            /** Query */
+            query: string;
+            /**
+             * Top K
+             * @default 5
+             */
+            top_k: number;
+            /** Start Ms */
+            start_ms?: number | null;
+            /** End Ms */
+            end_ms?: number | null;
+            /**
+             * Source Types
+             * @default [
+             *       "transcript",
+             *       "ocr"
+             *     ]
+             */
+            source_types: ("transcript" | "ocr")[];
+        };
+        /** EvidenceRef */
+        EvidenceRef: {
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Snapshot Id
+             * Format: uuid
+             */
+            snapshot_id: string;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "transcript" | "ocr";
+            /** Source Id */
+            source_id: string;
+            /** Quote */
+            quote: string;
+        };
+        /** EvidenceSearchResult */
+        EvidenceSearchResult: {
+            /** Hits */
+            hits: components["schemas"]["EvidenceHit"][];
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "lexical_fts5" | "scoped_source_fallback";
+            /** Scanned Sources */
+            scanned_sources: number;
+            /** Total Sources */
+            total_sources: number;
+            /** Index Generation */
+            index_generation: number | null;
+        };
         /** GenerateNotesRequest */
         "GenerateNotesRequest-Input": {
+            /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             kind: "generate_notes";
-            /**
-             * Transcript Snapshot Id
-             * Format: uuid
-             */
-            transcript_snapshot_id: string;
+            /** Transcript Snapshot Id */
+            transcript_snapshot_id?: string | null;
+            /** Context Snapshot Id */
+            context_snapshot_id?: string | null;
             /**
              * Output Language
              * @default zh-CN
@@ -642,16 +905,21 @@ export interface components {
         /** GenerateNotesRequest */
         "GenerateNotesRequest-Output": {
             /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * Kind
              * @default generate_notes
              * @constant
              */
             kind: "generate_notes";
-            /**
-             * Transcript Snapshot Id
-             * Format: uuid
-             */
-            transcript_snapshot_id: string;
+            /** Transcript Snapshot Id */
+            transcript_snapshot_id: string | null;
+            /** Context Snapshot Id */
+            context_snapshot_id: string | null;
             /**
              * Output Language
              * @default zh-CN
@@ -662,15 +930,20 @@ export interface components {
         /** GenerateQuizRequest */
         "GenerateQuizRequest-Input": {
             /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             kind: "generate_quiz";
-            /**
-             * Transcript Snapshot Id
-             * Format: uuid
-             */
-            transcript_snapshot_id: string;
+            /** Transcript Snapshot Id */
+            transcript_snapshot_id?: string | null;
+            /** Context Snapshot Id */
+            context_snapshot_id?: string | null;
             /** Notes Revision Id */
             notes_revision_id?: string | null;
             options?: components["schemas"]["QuizGenerationOptions-Input"];
@@ -678,16 +951,21 @@ export interface components {
         /** GenerateQuizRequest */
         "GenerateQuizRequest-Output": {
             /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * Kind
              * @default generate_quiz
              * @constant
              */
             kind: "generate_quiz";
-            /**
-             * Transcript Snapshot Id
-             * Format: uuid
-             */
-            transcript_snapshot_id: string;
+            /** Transcript Snapshot Id */
+            transcript_snapshot_id: string | null;
+            /** Context Snapshot Id */
+            context_snapshot_id: string | null;
             /** Notes Revision Id */
             notes_revision_id: string | null;
             options: components["schemas"]["QuizGenerationOptions-Output"];
@@ -721,12 +999,18 @@ export interface components {
             version: string;
             /**
              * Stage
-             * @default 14
+             * @default 19
              */
             stage: number;
         };
         /** InitialStudyRequest */
         "InitialStudyRequest-Input": {
+            /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -738,6 +1022,12 @@ export interface components {
         };
         /** InitialStudyRequest */
         "InitialStudyRequest-Output": {
+            /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
             /**
              * Kind
              * @default initial_study
@@ -861,6 +1151,30 @@ export interface components {
             /** Summary */
             summary: string;
         };
+        /** NotesDocumentV12 */
+        NotesDocumentV12: {
+            /**
+             * Schema Version
+             * @default 1.2
+             * @constant
+             */
+            schema_version: "1.2";
+            /** Title */
+            title: string;
+            /** Learning Objectives */
+            learning_objectives: string[];
+            /** Chapters */
+            chapters: components["schemas"]["ContextChapter"][];
+            /** Key Concepts */
+            key_concepts: string[];
+            /** Summary */
+            summary: string;
+            /**
+             * Context Snapshot Id
+             * Format: uuid
+             */
+            context_snapshot_id: string;
+        };
         /** NotesRevision */
         NotesRevision: {
             /** Storage Key */
@@ -874,6 +1188,16 @@ export interface components {
              */
             schema_version: "1.1";
             /**
+             * Review Policy
+             * @default null
+             */
+            review_policy: ("hard_only" | "semantic") | null;
+            /**
+             * Review Report Id
+             * @default null
+             */
+            review_report_id: string | null;
+            /**
              * Id
              * Format: uuid
              */
@@ -885,9 +1209,14 @@ export interface components {
             task_id: string;
             /**
              * Transcript Snapshot Id
-             * Format: uuid
+             * @default null
              */
-            transcript_snapshot_id: string;
+            transcript_snapshot_id: string | null;
+            /**
+             * Context Snapshot Id
+             * @default null
+             */
+            context_snapshot_id: string | null;
             /**
              * Parent Revision Id
              * @default null
@@ -914,13 +1243,51 @@ export interface components {
              * @default 1.1
              * @enum {string}
              */
-            document_schema_version: "1.0" | "1.1";
+            document_schema_version: "1.0" | "1.1" | "1.2";
             preferences: components["schemas"]["NotePreferences"];
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+        };
+        /** OcrObservation */
+        OcrObservation: {
+            /** Id */
+            id: string;
+            /**
+             * Frame Id
+             * Format: uuid
+             */
+            frame_id: string;
+            /** Raw Text */
+            raw_text: string;
+            /** Bbox */
+            bbox: [
+                number,
+                number,
+                number,
+                number
+            ];
+            /**
+             * Confidence
+             * @default null
+             */
+            confidence: number | null;
+            /** Engine Version */
+            engine_version: string;
+            /** Language */
+            language: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "succeeded" | "empty" | "failed";
+            /**
+             * Error Code
+             * @default null
+             */
+            error_code: string | null;
         };
         /** OperationAttempt */
         OperationAttempt: {
@@ -952,6 +1319,11 @@ export interface components {
              * @default null
              */
             transcript_snapshot_id: string | null;
+            /**
+             * Context Snapshot Id
+             * @default null
+             */
+            context_snapshot_id: string | null;
             /**
              * Notes Revision Id
              * @default null
@@ -1010,6 +1382,11 @@ export interface components {
         /** ProcessingOptions */
         "ProcessingOptions-Input": {
             /**
+             * Enable Ocr
+             * @default false
+             */
+            enable_ocr: boolean;
+            /**
              * Generate Notes
              * @default true
              */
@@ -1022,6 +1399,11 @@ export interface components {
         };
         /** ProcessingOptions */
         "ProcessingOptions-Output": {
+            /**
+             * Enable Ocr
+             * @default false
+             */
+            enable_ocr: boolean;
             /**
              * Generate Notes
              * @default true
@@ -1114,6 +1496,45 @@ export interface components {
             /** Evidence */
             evidence: components["schemas"]["SourceEvidence"][];
         };
+        /** QuestionV12 */
+        QuestionV12: {
+            /** Id */
+            id: string;
+            /**
+             * Type
+             * @default short_answer
+             * @constant
+             */
+            type: "short_answer";
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "easy" | "medium" | "hard";
+            /**
+             * Chapter Id
+             * @default null
+             */
+            chapter_id: string | null;
+            /** Question */
+            question: string;
+            /** Answer */
+            answer: string;
+            /** Explanation */
+            explanation: string;
+            /**
+             * Source Segment Ids
+             * @default []
+             */
+            source_segment_ids: string[];
+            /**
+             * Evidence
+             * @default []
+             */
+            evidence: components["schemas"]["SourceEvidence"][];
+            /** Source Refs */
+            source_refs: components["schemas"]["EvidenceRef"][];
+        };
         /** QuizBatch */
         QuizBatch: {
             /** Storage Key */
@@ -1127,6 +1548,16 @@ export interface components {
              */
             schema_version: "1.1";
             /**
+             * Review Policy
+             * @default null
+             */
+            review_policy: ("hard_only" | "semantic") | null;
+            /**
+             * Review Report Id
+             * @default null
+             */
+            review_report_id: string | null;
+            /**
              * Id
              * Format: uuid
              */
@@ -1138,9 +1569,14 @@ export interface components {
             task_id: string;
             /**
              * Transcript Snapshot Id
-             * Format: uuid
+             * @default null
              */
-            transcript_snapshot_id: string;
+            transcript_snapshot_id: string | null;
+            /**
+             * Context Snapshot Id
+             * @default null
+             */
+            context_snapshot_id: string | null;
             /**
              * Notes Revision Id
              * @default null
@@ -1174,7 +1610,7 @@ export interface components {
              * @default 1.1
              * @enum {string}
              */
-            document_schema_version: "1.0" | "1.1";
+            document_schema_version: "1.0" | "1.1" | "1.2";
             /**
              * Created At
              * Format: date-time
@@ -1220,6 +1656,32 @@ export interface components {
             /** Questions */
             questions: components["schemas"]["QuestionV11"][];
         };
+        /** QuizDocumentV12 */
+        QuizDocumentV12: {
+            /**
+             * Schema Version
+             * @default 1.2
+             * @constant
+             */
+            schema_version: "1.2";
+            /**
+             * Question Count
+             * @default 5
+             */
+            question_count: number;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "easy" | "medium" | "hard";
+            /** Questions */
+            questions: components["schemas"]["QuestionV12"][];
+            /**
+             * Context Snapshot Id
+             * Format: uuid
+             */
+            context_snapshot_id: string;
+        };
         /** QuizGenerationOptions */
         "QuizGenerationOptions-Input": {
             /**
@@ -1258,18 +1720,109 @@ export interface components {
              */
             output_language: string;
         };
+        /** ReviewIssue */
+        ReviewIssue: {
+            /** Target Id */
+            target_id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "coverage" | "unsupported_answer" | "conflict" | "invalid_source" | "review_unavailable";
+            /** Suggestion */
+            suggestion: string;
+            /** Source Refs */
+            source_refs: components["schemas"]["EvidenceRef"][];
+        };
+        /** ReviewReport */
+        ReviewReport: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "failed" | "uncertain";
+            /** Issues */
+            issues: components["schemas"]["ReviewIssue"][];
+            /** Required Source Ids */
+            required_source_ids: string[];
+            /** Required Time Ranges */
+            required_time_ranges: [
+                number,
+                number
+            ][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /** Target Document Sha256 */
+            target_document_sha256: string;
+            /**
+             * Target Kind
+             * @enum {string}
+             */
+            target_kind: "notes" | "quiz";
+            /**
+             * Source Snapshot Id
+             * Format: uuid
+             */
+            source_snapshot_id: string;
+            /**
+             * Policy
+             * @enum {string}
+             */
+            policy: "hard_only" | "semantic";
+            /**
+             * Policy Version
+             * @default review-v1
+             * @constant
+             */
+            policy_version: "review-v1";
+            /** Reviewer Model */
+            reviewer_model: string | null;
+            /**
+             * Prompt Version
+             * @default critic-v1
+             * @constant
+             */
+            prompt_version: "critic-v1";
+            /** Round */
+            round: number;
+            /** Usage Delta */
+            usage_delta: number;
+            /**
+             * Measurement Scope
+             * @enum {string}
+             */
+            measurement_scope: "hard_checks" | "model_judgment";
+        };
         /** ReviseNotesRequest */
         "ReviseNotesRequest-Input": {
+            /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             kind: "revise_notes";
-            /**
-             * Transcript Snapshot Id
-             * Format: uuid
-             */
-            transcript_snapshot_id: string;
+            /** Transcript Snapshot Id */
+            transcript_snapshot_id?: string | null;
+            /** Context Snapshot Id */
+            context_snapshot_id?: string | null;
             /**
              * Base Revision Id
              * Format: uuid
@@ -1284,16 +1837,21 @@ export interface components {
         /** ReviseNotesRequest */
         "ReviseNotesRequest-Output": {
             /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * Kind
              * @default revise_notes
              * @constant
              */
             kind: "revise_notes";
-            /**
-             * Transcript Snapshot Id
-             * Format: uuid
-             */
-            transcript_snapshot_id: string;
+            /** Transcript Snapshot Id */
+            transcript_snapshot_id: string | null;
+            /** Context Snapshot Id */
+            context_snapshot_id: string | null;
             /**
              * Base Revision Id
              * Format: uuid
@@ -1320,6 +1878,11 @@ export interface components {
              * @constant
              */
             schema_version: "1.1";
+            /**
+             * Event Revision
+             * @default 0
+             */
+            event_revision: number;
             /**
              * Id
              * Format: uuid
@@ -1406,6 +1969,17 @@ export interface components {
              */
             transcript_language: string | null;
             /**
+             * Enable Ocr
+             * @default false
+             */
+            enable_ocr: boolean;
+            /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * Generate Notes
              * @default true
              */
@@ -1433,16 +2007,18 @@ export interface components {
             available_artifacts: components["schemas"]["ArtifactSummary"][];
             /** @default null */
             transcript: components["schemas"]["Transcript"] | null;
+            /** @default null */
+            context: components["schemas"]["VideoContextSnapshot"] | null;
             /**
              * Notes
              * @default null
              */
-            notes: components["schemas"]["NotesDocument"] | components["schemas"]["NotesDocumentV11"] | null;
+            notes: components["schemas"]["NotesDocument"] | components["schemas"]["NotesDocumentV11"] | components["schemas"]["NotesDocumentV12"] | null;
             /**
              * Quiz
              * @default null
              */
-            quiz: components["schemas"]["QuizDocument"] | components["schemas"]["QuizDocumentV11"] | null;
+            quiz: components["schemas"]["QuizDocument"] | components["schemas"]["QuizDocumentV11"] | components["schemas"]["QuizDocumentV12"] | null;
         };
         /** Task */
         Task: {
@@ -1470,7 +2046,7 @@ export interface components {
              * Current Step
              * @default null
              */
-            current_step: ("load_subtitles" | "extract_audio" | "transcribe_audio" | "generate_notes" | "generate_quiz") | null;
+            current_step: ("load_subtitles" | "extract_audio" | "transcribe_audio" | "generate_notes" | "generate_quiz" | "prepare_video_context") | null;
             /**
              * Attempt
              * @default 1
@@ -1531,7 +2107,7 @@ export interface components {
             /** Attempt */
             attempt: number;
             /** Tool Name */
-            tool_name: ("load_subtitles" | "extract_audio" | "transcribe_audio" | "generate_notes" | "generate_quiz") | "unknown";
+            tool_name: ("load_subtitles" | "extract_audio" | "transcribe_audio" | "generate_notes" | "generate_quiz" | "prepare_video_context") | "unknown";
             /**
              * Status
              * @default pending
@@ -1620,8 +2196,102 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** VideoContextSegment */
+        VideoContextSegment: {
+            /** Id */
+            id: string;
+            /** Start Ms */
+            start_ms: number;
+            /** End Ms */
+            end_ms: number;
+            /**
+             * Transcript Segment Ids
+             * @default []
+             */
+            transcript_segment_ids: string[];
+            /**
+             * Ocr Observation Ids
+             * @default []
+             */
+            ocr_observation_ids: string[];
+            /**
+             * Frame Ids
+             * @default []
+             */
+            frame_ids: string[];
+            /**
+             * Source Types
+             * @default []
+             */
+            source_types: ("transcript" | "ocr")[];
+        };
+        /** VideoContextSnapshot */
+        VideoContextSnapshot: {
+            /**
+             * Schema Version
+             * @default 1.2
+             * @constant
+             */
+            schema_version: "1.2";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Video Asset Id
+             * @default null
+             */
+            video_asset_id: string | null;
+            /**
+             * Transcript Snapshot Id
+             * @default null
+             */
+            transcript_snapshot_id: string | null;
+            /** @default null */
+            transcript: components["schemas"]["Transcript"] | null;
+            /**
+             * Frames
+             * @default []
+             */
+            frames: components["schemas"]["EvidenceFrame"][];
+            /**
+             * Observations
+             * @default []
+             */
+            observations: components["schemas"]["OcrObservation"][];
+            /** Segments */
+            segments: components["schemas"]["VideoContextSegment"][];
+            /** Branch Statuses */
+            branch_statuses: {
+                [key: string]: "succeeded" | "failed" | "disabled" | "empty";
+            };
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+            /** Manifest Sha256 */
+            manifest_sha256: string;
+            /**
+             * Config Version
+             * @default context-v1
+             * @constant
+             */
+            config_version: "context-v1";
+        };
         /** ProcessingOptions */
         ProcessingOptions: {
+            /**
+             * Enable Ocr
+             * @default false
+             */
+            enable_ocr: boolean;
             /**
              * Generate Notes
              * @default true
@@ -1687,6 +2357,12 @@ export interface components {
         /** InitialStudyRequest */
         InitialStudyRequest: {
             /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
@@ -1698,15 +2374,26 @@ export interface components {
         /** GenerateNotesRequest */
         GenerateNotesRequest: {
             /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             kind: "generate_notes";
             /**
              * Transcript Snapshot Id
-             * Format: uuid
+             * @default null
              */
-            transcript_snapshot_id: string;
+            transcript_snapshot_id: string | null;
+            /**
+             * Context Snapshot Id
+             * @default null
+             */
+            context_snapshot_id: string | null;
             /**
              * Output Language
              * @default zh-CN
@@ -1717,15 +2404,26 @@ export interface components {
         /** GenerateQuizRequest */
         GenerateQuizRequest: {
             /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             kind: "generate_quiz";
             /**
              * Transcript Snapshot Id
-             * Format: uuid
+             * @default null
              */
-            transcript_snapshot_id: string;
+            transcript_snapshot_id: string | null;
+            /**
+             * Context Snapshot Id
+             * @default null
+             */
+            context_snapshot_id: string | null;
             /**
              * Notes Revision Id
              * @default null
@@ -1735,6 +2433,12 @@ export interface components {
         };
         /** ChatReplyRequest */
         ChatReplyRequest: {
+            /**
+             * Scope
+             * @default selected_chapters
+             * @enum {string}
+             */
+            scope: "selected_chapters" | "course_retrieval";
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -1758,15 +2462,26 @@ export interface components {
         /** ReviseNotesRequest */
         ReviseNotesRequest: {
             /**
+             * Review Policy
+             * @default hard_only
+             * @enum {string}
+             */
+            review_policy: "hard_only" | "semantic";
+            /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             kind: "revise_notes";
             /**
              * Transcript Snapshot Id
-             * Format: uuid
+             * @default null
              */
-            transcript_snapshot_id: string;
+            transcript_snapshot_id: string | null;
+            /**
+             * Context Snapshot Id
+             * @default null
+             */
+            context_snapshot_id: string | null;
             /**
              * Base Revision Id
              * Format: uuid
@@ -1811,6 +2526,96 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** EventOperationState */
+        EventOperationState: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+            /** Attempt */
+            attempt: number;
+            /** Event Revision */
+            event_revision: number;
+            /**
+             * Error Code
+             * @default null
+             */
+            error_code: string | null;
+        };
+        /** EventSnapshot */
+        EventSnapshot: {
+            /** Cursor */
+            cursor: number;
+            /** Retention Floor */
+            retention_floor: number;
+            state: components["schemas"]["CourseStudyState"];
+            /** Operations */
+            operations: components["schemas"]["EventOperationState"][];
+        };
+        /** OperationEvent */
+        OperationEvent: {
+            /** Event Id */
+            event_id: number;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /** Attempt */
+            attempt: number;
+            /** State Revision */
+            state_revision: number;
+            /** Stage */
+            stage: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+            /**
+             * Stage Status
+             * @default null
+             */
+            stage_status: ("pending" | "running" | "succeeded" | "failed" | "skipped") | null;
+            /**
+             * Completed Units
+             * @default null
+             */
+            completed_units: number | null;
+            /**
+             * Total Units
+             * @default null
+             */
+            total_units: number | null;
+            /**
+             * Error Code
+             * @default null
+             */
+            error_code: string | null;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
         };
         /** ChunkPart */
         ChunkPart: {
@@ -1891,7 +2696,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "audio" | "transcript" | "notes" | "quiz";
+            kind: "audio" | "transcript" | "notes" | "quiz" | "context";
             /**
              * Cache Key
              * @default null
@@ -1915,7 +2720,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "audio" | "transcript" | "notes" | "quiz";
+            kind: "audio" | "transcript" | "notes" | "quiz" | "context";
             /**
              * Schema Version
              * @default 1.0
@@ -1943,7 +2748,7 @@ export interface components {
              * Tool Name
              * @enum {string}
              */
-            tool_name: "load_subtitles" | "extract_audio" | "transcribe_audio" | "generate_notes" | "generate_quiz";
+            tool_name: "load_subtitles" | "extract_audio" | "transcribe_audio" | "generate_notes" | "generate_quiz" | "prepare_video_context";
             /**
              * Status
              * @enum {string}
@@ -2460,7 +3265,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QuizDocument"] | components["schemas"]["QuizDocumentV11"];
+                    "application/json": components["schemas"]["QuizDocument"] | components["schemas"]["QuizDocumentV11"] | components["schemas"]["QuizDocumentV12"];
                 };
             };
             /** @description Validation Error */
@@ -2753,7 +3558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NotesDocument"] | components["schemas"]["NotesDocumentV11"];
+                    "application/json": components["schemas"]["NotesDocument"] | components["schemas"]["NotesDocumentV11"] | components["schemas"]["NotesDocumentV12"];
                 };
             };
             /** @description Validation Error */
@@ -2822,6 +3627,174 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotesRevision"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    context_api_tasks__task_id__contexts__snapshot_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                snapshot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoContextSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    frame_api_tasks__task_id__contexts__snapshot_id__frames__frame_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                snapshot_id: string;
+                frame_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reviews_api_tasks__task_id__operations__operation_id__reviews_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewReport"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_api_tasks__task_id__evidence_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvidenceQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceSearchResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    events_api_tasks__task_id__events_get: {
+        parameters: {
+            query?: {
+                since?: number | null;
+                operation_id?: string | null;
+            };
+            header?: {
+                "last-event-id"?: string | null;
+            };
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

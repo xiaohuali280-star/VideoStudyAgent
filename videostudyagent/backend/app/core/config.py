@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     media_extract_timeout: int = Field(default=300, gt=0)
     ffmpeg_binary: str = "ffmpeg"
     ffprobe_binary: str = "ffprobe"
+    ocr_binary: str = "tesseract"
+    ocr_language: str = "chi_sim+eng"
+    ocr_timeout: int = Field(default=30, gt=0, le=300)
+    ocr_gap_seconds: int = Field(default=30, ge=1, le=120)
+    ocr_max_frames: int = Field(default=300, ge=1, le=1000)
     subtitle_tolerance_ms: int = Field(default=1500, ge=0)
     max_video_bytes: int = Field(default=500 * 1024 * 1024, gt=0)
     max_subtitle_bytes: int = Field(default=5 * 1024 * 1024, gt=0)

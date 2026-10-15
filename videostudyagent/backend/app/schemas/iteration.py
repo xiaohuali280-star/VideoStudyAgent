@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, ConfigDict, Field, StrictBool, model_validator
 
 from app.schemas.common import ContentHash, ContractModel, ErrorInfo, PositiveInt, SegmentId
+from app.schemas.review import ReviewPolicy
 from app.schemas.study import (
     Difficulty,
     LanguageCode,
@@ -15,6 +16,7 @@ from app.schemas.study import (
     StudyOptions,
 )
 from app.schemas.tasks import StoredObject
+from app.schemas.video_context import EvidenceRef
 
 ShortText = Annotated[str, Field(strict=True, min_length=1, max_length=2000)]
 Counter = Annotated[int, Field(strict=True, ge=0)]
@@ -28,8 +30,16 @@ class IterationDocument(ContractModel):
 class FrozenOptions(ContractModel):
     model_config = ConfigDict(frozen=True)
 
+    @model_validator(mode="after")
+    def request_source(self):
+        if hasattr(self, "transcript_snapshot_id"):
+            if not (self.transcript_snapshot_id or self.context_snapshot_id):
+                raise ValueError("An immutable source is required")
+        return self
+
 
 class ProcessingOptions(FrozenOptions):
+    enable_ocr: StrictBool = False
     generate_notes: StrictBool = True
     generate_quiz: StrictBool = True
 
@@ -59,6 +69,7 @@ class NotePreferences(FrozenOptions):
 
 
 class InitialStudyRequest(FrozenOptions):
+    review_policy: ReviewPolicy = "hard_only"
     kind: Literal["initial_study"] = "initial_study"
     processing: ProcessingOptions = Field(default_factory=ProcessingOptions)
     quiz: QuizGenerationOptions = Field(default_factory=QuizGenerationOptions)
@@ -66,20 +77,25 @@ class InitialStudyRequest(FrozenOptions):
 
 
 class GenerateNotesRequest(FrozenOptions):
+    review_policy: ReviewPolicy = "hard_only"
     kind: Literal["generate_notes"] = "generate_notes"
-    transcript_snapshot_id: UUID
+    transcript_snapshot_id: UUID | None = None
+    context_snapshot_id: UUID | None = None
     output_language: LanguageCode = "zh-CN"
     preferences: NotePreferences = Field(default_factory=NotePreferences)
 
 
 class GenerateQuizRequest(FrozenOptions):
+    review_policy: ReviewPolicy = "hard_only"
     kind: Literal["generate_quiz"] = "generate_quiz"
-    transcript_snapshot_id: UUID
+    transcript_snapshot_id: UUID | None = None
+    context_snapshot_id: UUID | None = None
     notes_revision_id: UUID | None = None
     options: QuizGenerationOptions = Field(default_factory=QuizGenerationOptions)
 
 
 class ChatReplyRequest(FrozenOptions):
+    scope: Literal["selected_chapters", "course_retrieval"] = "selected_chapters"
     kind: Literal["chat_reply"] = "chat_reply"
     conversation_id: UUID
     notes_revision_id: UUID
@@ -88,8 +104,10 @@ class ChatReplyRequest(FrozenOptions):
 
 
 class ReviseNotesRequest(FrozenOptions):
+    review_policy: ReviewPolicy = "hard_only"
     kind: Literal["revise_notes"] = "revise_notes"
-    transcript_snapshot_id: UUID
+    transcript_snapshot_id: UUID | None = None
+    context_snapshot_id: UUID | None = None
     base_revision_id: UUID
     chapter_ids: Annotated[list[SegmentId], Field(max_length=20)] = Field(default_factory=list)
     preferences: NotePreferences
@@ -118,6 +136,7 @@ class OperationUsage(ContractModel):
 
 class OperationOutput(ContractModel):
     transcript_snapshot_id: UUID | None = None
+    context_snapshot_id: UUID | None = None
     notes_revision_id: UUID | None = None
     quiz_batch_id: UUID | None = None
     message_id: UUID | None = None
@@ -133,6 +152,7 @@ class OperationAttempt(ContractModel):
 
 
 class StudyOperation(IterationDocument):
+    event_revision: Counter = 0
     id: UUID
     task_id: UUID
     request: OperationRequest
@@ -159,35 +179,59 @@ class TranscriptSnapshot(IterationDocument, StoredObject):
 
 
 class NotesRevision(IterationDocument, StoredObject):
+    review_policy: ReviewPolicy | None = None
+    review_report_id: UUID | None = None
     id: UUID
     task_id: UUID
-    transcript_snapshot_id: UUID
+    transcript_snapshot_id: UUID | None = None
+    context_snapshot_id: UUID | None = None
     parent_revision_id: UUID | None = None
     operation_id: UUID | None = None
     status: Literal["draft", "published"] = "draft"
     discarded: StrictBool = False
-    document_schema_version: Literal["1.0", "1.1"] = "1.1"
+    document_schema_version: Literal["1.0", "1.1", "1.2"] = "1.1"
     preferences: NotePreferences = Field(default_factory=NotePreferences)
     created_at: AwareDatetime
 
+    @model_validator(mode="after")
+    def source_version(self):
+        if self.document_schema_version == "1.2":
+            if self.context_snapshot_id is None:
+                raise ValueError("1.2 requires context snapshot")
+        elif self.transcript_snapshot_id is None or self.context_snapshot_id is not None:
+            raise ValueError("Legacy document requires transcript source")
+        return self
+
 
 class QuizBatch(IterationDocument, StoredObject):
+    review_policy: ReviewPolicy | None = None
+    review_report_id: UUID | None = None
     id: UUID
     task_id: UUID
-    transcript_snapshot_id: UUID
+    transcript_snapshot_id: UUID | None = None
+    context_snapshot_id: UUID | None = None
     notes_revision_id: UUID | None = None
     operation_id: UUID | None = None
     sequence: PositiveInt
     nonce: UUID
     question_count: Annotated[int, Field(strict=True, ge=1, le=20)] = 5
     difficulty: Difficulty = "medium"
-    document_schema_version: Literal["1.0", "1.1"] = "1.1"
+    document_schema_version: Literal["1.0", "1.1", "1.2"] = "1.1"
     created_at: AwareDatetime
 
     @model_validator(mode="after")
     def fixed_new_count(self) -> Self:
-        if self.document_schema_version == "1.1" and self.question_count != 5:
+        if self.document_schema_version in {"1.1", "1.2"} and self.question_count != 5:
             raise ValueError("New quiz batches require exactly five questions")
+        return self
+
+    @model_validator(mode="after")
+    def source_version(self):
+        if self.document_schema_version == "1.2":
+            if self.context_snapshot_id is None:
+                raise ValueError("1.2 requires context snapshot")
+        elif self.transcript_snapshot_id is None or self.context_snapshot_id is not None:
+            raise ValueError("Legacy document requires transcript source")
         return self
 
 
@@ -201,6 +245,7 @@ class CourseStudyState(IterationDocument):
     task_id: UUID
     revision: Counter = 0
     transcript_snapshot_id: UUID | None = None
+    context_snapshot_id: UUID | None = None
     notes_revision_id: UUID | None = None
     quiz_batch_id: UUID | None = None
 
@@ -212,6 +257,7 @@ class Conversation(IterationDocument):
 
 
 class ConversationMessage(IterationDocument):
+    schema_version: Literal["1.1", "1.2"] = "1.1"
     id: UUID
     task_id: UUID
     conversation_id: UUID
@@ -222,7 +268,9 @@ class ConversationMessage(IterationDocument):
     notes_revision_id: UUID
     operation_id: UUID | None = None
     created_at: AwareDatetime
-    citations: Annotated[list[SourceEvidence], Field(max_length=20)] = Field(default_factory=list)
+    citations: Annotated[list[SourceEvidence | EvidenceRef], Field(max_length=20)] = Field(
+        default_factory=list
+    )
 
     @model_validator(mode="after")
     def bounded_user_message(self) -> Self:

@@ -81,6 +81,13 @@ async def create_task(request: Request):
             raise ValueError("title too long")
         settings, repo = request.app.state.settings, repository(request)
         ensure_study_schema(settings, repo.engine)
+        from app.services.review_setup import require_review_schema
+
+        require_review_schema(repo.engine)
+        if options.enable_ocr:
+            from app.services.context_operations import ensure_context_schema
+
+            ensure_context_schema(settings, repo.engine)
         task = await save_uploads(settings, repo, files, options, title)
         enqueue_initial(task, settings, repo.engine)
         return task
@@ -106,6 +113,9 @@ def task_detail(request: Request, task_id: UUID):
 def retry_task(request: Request, task_id: UUID):
     repo = repository(request)
     ensure_study_schema(request.app.state.settings, repo.engine)
+    from app.services.review_setup import require_review_schema
+
+    require_review_schema(repo.engine)
     if repo.get(task_id).options.question_count != 5:
         raise StudyError(
             "LEGACY_ACTION_REQUIRED", "旧题数任务请保留历史资料，并按新选项重新上传课程。", 409

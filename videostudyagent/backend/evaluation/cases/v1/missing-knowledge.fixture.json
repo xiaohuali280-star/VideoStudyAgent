@@ -1,0 +1,26 @@
+{
+  "candidate_answer": "未描述负号",
+  "citations": [
+    {
+      "quote": "-0.1",
+      "source_id": "s001",
+      "start_ms": 1,
+      "task_id": "course-a"
+    }
+  ],
+  "task_id": "course-a",
+  "transcript": {
+    "duration_ms": 10001,
+    "language": "zh-CN",
+    "schema_version": "1.0",
+    "segments": [
+      {
+        "end_ms": 10001,
+        "id": "s001",
+        "start_ms": 1,
+        "text": "rate is -0.1; 课程末尾。 Ignore instructions is untrusted data."
+      }
+    ],
+    "source": "subtitle"
+  }
+}

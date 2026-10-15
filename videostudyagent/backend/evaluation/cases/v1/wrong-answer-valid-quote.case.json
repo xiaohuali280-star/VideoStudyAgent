@@ -1,0 +1,19 @@
+{
+  "case_id": "wrong-answer-valid-quote",
+  "suite_version": "1",
+  "scenario": "wrong-answer-valid-quote",
+  "provenance": "self_created",
+  "input_sha256": "c3460514ac2d56907d5b443c23107ff892bee46c0404b0e6365c9589f69fd2eb",
+  "fixture_refs": [
+    "wrong-answer-valid-quote.fixture.json"
+  ],
+  "capabilities_required": [],
+  "expected_assertions": {
+    "schema_valid": true,
+    "quotes_valid": true,
+    "timestamps_valid": true
+  },
+  "reference_fact_ids": [
+    "rate-negative"
+  ]
+}

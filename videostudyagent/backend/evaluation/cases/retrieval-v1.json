@@ -1,0 +1,8 @@
+[
+  {"query":"梯度","relevant":["s000"]},
+  {"query":"学习率","relevant":["s000","s001"]},
+  {"query":"attention_mask","relevant":["s002"]},
+  {"query":"-0.1","relevant":["s000"]},
+  {"query":"矩阵乘法","relevant":["s003"]},
+  {"query":"课程不存在的术语xyz","relevant":[]}
+]

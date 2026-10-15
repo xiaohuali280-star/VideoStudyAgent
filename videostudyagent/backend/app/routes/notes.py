@@ -13,6 +13,7 @@ from app.schemas.iteration import (
     NotesRevision,
 )
 from app.schemas.study import NotesDocument, NotesDocumentV11
+from app.schemas.video_context import NotesDocumentV12
 from app.services.study_versions import VersionReader
 
 router = APIRouter(prefix="/api/tasks", tags=["notes"])
@@ -50,7 +51,8 @@ def revisions(
 
 
 @router.get(
-    "/{task_id}/notes-revisions/{revision_id}", response_model=NotesDocument | NotesDocumentV11
+    "/{task_id}/notes-revisions/{revision_id}",
+    response_model=NotesDocument | NotesDocumentV11 | NotesDocumentV12,
 )
 def revision_document(request: Request, task_id: UUID, revision_id: UUID):
     record = study_repository(request).notes(task_id, revision_id)
@@ -62,10 +64,20 @@ def apply_revision(request: Request, task_id: UUID, revision_id: UUID, body: Pub
     repo = study_repository(request)
     record = repo.notes(task_id, revision_id)
     reader = VersionReader(request.app.state.settings.data_dir)
-    validate_notes(
-        reader.notes(record),
-        reader.transcript(repo.snapshot(task_id, record.transcript_snapshot_id)),
-    )
+    if record.context_snapshot_id:
+        from app.db.context_repository import VideoContextRepository
+        from app.services.source_context import validate_context_document
+
+        validate_context_document(
+            reader.notes(record),
+            VideoContextRepository(repo.engine).get(task_id, record.context_snapshot_id),
+            require_coverage=True,
+        )
+    else:
+        validate_notes(
+            reader.notes(record),
+            reader.transcript(repo.snapshot(task_id, record.transcript_snapshot_id)),
+        )
     return repo.publish_notes(task_id, revision_id, expected_current_id=body.expected_current_id)
 
 

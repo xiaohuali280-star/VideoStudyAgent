@@ -1,0 +1,19 @@
+{
+  "case_id": "long-tail",
+  "suite_version": "1",
+  "scenario": "long-tail",
+  "provenance": "self_created",
+  "input_sha256": "7aa2dc8751b57467832a1295c3dd5eabe4b7e274668b905fee2861c21347721a",
+  "fixture_refs": [
+    "long-tail.fixture.json"
+  ],
+  "capabilities_required": [],
+  "expected_assertions": {
+    "schema_valid": true,
+    "quotes_valid": true,
+    "timestamps_valid": true
+  },
+  "reference_fact_ids": [
+    "rate-negative"
+  ]
+}

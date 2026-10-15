@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 
 from alembic import command
 from app.core.errors import StudyError
+from app.db.event_models import OperationEventRow
 from app.db.iteration_models import ITERATION_TABLES, NotesRevisionRow, OperationRow
 from app.db.repository import TaskRepository, initialize_database, now
 from app.db.session import Base
@@ -50,6 +51,7 @@ def foundation(application):
     from app.db.iteration_models import OperationRow
 
     with application.state.repository.engine.begin() as connection:
+        connection.execute(delete(OperationEventRow))
         connection.execute(delete(OperationRow))
     settings = application.state.settings
     application.state.repository.engine.dispose()
@@ -422,6 +424,7 @@ def test_legacy_import_is_idempotent_preserves_files_and_old_question_counts(app
             .where(TaskRow.id == task_id)
             .values(payload=task.model_dump(mode="json"))
         )
+        connection.execute(delete(OperationEventRow))
         connection.execute(delete(OperationRow))
     asyncio.run(run_task(task, application.state.settings, old_repo, ScriptedStudyModel()))
     assert old_repo.get(task_id).status == "succeeded"

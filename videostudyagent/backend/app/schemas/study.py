@@ -24,6 +24,8 @@ class StudyOptions(ContractModel):
     question_type: Literal["short_answer"] = "short_answer"
     output_language: LanguageCode = "zh-CN"
     transcript_language: LanguageCode | None = None
+    enable_ocr: StrictBool = False
+    review_policy: Literal["hard_only", "semantic"] = "hard_only"
     generate_notes: StrictBool = True
     generate_quiz: StrictBool = True
 

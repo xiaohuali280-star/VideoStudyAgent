@@ -21,3 +21,10 @@
 阶段 3：B2 保留可用模型构造和片段转换，去除内部 app/events、自动删除/重下载及异常吞掉；没有采用 V1 备选，因为 B2 已可精简适配。SRT/VTT 采用成熟的 srt/webvtt-py 库，补严格范围与毫秒契约，不复制上游有损 TXT 解析。faster-whisper 1.2.1 与 PyAV 19 的 metadata_errors 调用不兼容，按实际失败和官方 issue 证据锁定 av<19；不修改安装包源码。
 
 阶段 1 自研内容仅为本项目工程、契约、迁移骨架、健康接口和离线替身；它们属于既定胶水边界，未提前重写 B1–D3 的业务功能。
+
+
+## V3 设计参考（2026-10-15）
+
+DOVideo-AI 固定 SHA df4fa83a78a51dfa1718606bf47cf49942e1112e，仅参考 VideoContext、scene/max-gap、单路降级、Critic 补证、检索/评测与事件通知的设计。未复制 Java 代码、提示、测试或配置，未引入 Spring/Redis/RocketMQ/Qdrant。避免上游序号推时刻、去负号的证据归一化、失败仍发布、隐藏远程检索调用及所谓 offline 模型调用。具体原路径与链接见 GAP_AUDIT_V3.md。
+
+实际延用 B1 RequestChunker（新 typed-source 外围适配）、D1 JSON 解析、D2 quote_present、现有 BoundedLLM/单 Agent/版本/CAS/聊天；不重复开发旧模块，不把设计研究登记成直接源码采用。新增 OCR 通过独立 Tesseract CLI 适配，本轮未安装或分发其引擎/语言包。测试与未验证范围见 STAGE_15_REPORT.md 至 STAGE_19_REPORT.md。

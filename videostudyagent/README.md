@@ -1,6 +1,6 @@
 # VideoStudyAgent
 
-阶段 8–14 功能已实现，当前新建课程使用统一操作队列。已有课程库须先停止 API/Worker，运行下方显式备份升级命令；本次开发没有迁移你的个人课程库，也没有运行你的待处理任务。
+V3 阶段 15–19 已完成离线实现：可选本地 OCR、多来源上下文、发布前审核、本课程证据检索及实时进展。新建课程使用统一操作队列。已有课程库须先停止 API/Worker，再显式备份升级；本次 V3 开发没有迁移个人课程库或运行个人待处理任务。
 
 本地课程视频智能学习 MVP。支持 MP4、SRT/VTT 或视频配字幕，配字幕时优先使用字幕。字幕始终自动准备；用户分别选择梳理笔记和生成自测，两项都关可在没有 LLM Key 时只处理字幕。新自测每批固定 5 道简答题，支持 easy/medium/hard、答案、解析、引用、换批及历史导出，旧 1–20 题结果仍可阅读。资料语言可选中文或英文。
 
@@ -8,7 +8,7 @@
 
 导出：notes.md、quiz.md、quiz.json、transcript.json、transcript.srt。导出只读取经过校验的已有产物，不重新调用模型。
 
-阶段 1–7 已完成离线验收；真实小视频/FFmpeg/Whisper 和实际 Worker 子进程已验证。真实 DeepSeek 验收按用户要求延后；测试模型结果不能用于评价模型生成质量。最新证据见 [阶段 14 记录](docs/STAGE_14_REPORT.md)。
+阶段 1–7 已完成离线验收；真实小视频/FFmpeg/Whisper 和实际 Worker 子进程已验证。真实 DeepSeek 验收按用户要求延后；测试模型结果不能用于评价模型生成质量。V3 的真实 OCR、语义审核效果与费用仍未验收，向量检索为未启用的条件项。最新证据见 [阶段 19 记录](docs/STAGE_19_REPORT.md)。
 
 ## 安装
 
@@ -57,10 +57,10 @@ Set-Location backend
 先在三个终端用 Ctrl+C 停止 API、Worker 和前端。确认 API 与 Worker 均已退出后，在 backend 目录执行：
 
 ```powershell
-& .\.venv\Scripts\python.exe -m app.migrate_study --api-stopped
+& .\.venv\Scripts\python.exe -m app.migrate_study --api-stopped --target 0007_operation_events
 ```
 
-Windows CMD 使用同一命令，去掉开头的 `&`。脚本先将 SQLite 完整备份到 `data/backups/before-v2-*.db`，再显式升级至 0003 并索引通过校验的旧结果；原始媒体及生成文件不改写，不调用模型。已是新版本的课程不会重复导入。Worker 运行时锁会阻止升级，`--api-stopped` 是你确认 API 已停止的必要参数。
+Windows CMD 使用同一命令，去掉开头的 `&`。脚本先将 SQLite 完整备份到 `data/backups/before-schema-*.db`，再显式升级至 0007 并索引通过校验的旧结果；原始媒体及生成文件不改写，不调用模型。已是新版本的课程不会重复导入。Worker 运行时锁会阻止升级，`--api-stopped` 是你确认 API 已停止的必要参数。此命令供你确认停机后执行，V3 开发期间未对个人库运行。
 
 旧结果按原题数保留。旧排队或中断任务不会自动生成，原 Task 状态保留作历史记录；需按新选项重新上传确认处理。损坏产物会被跳过或报错，不伪装成成功。不要直接对运行中的数据库执行 Alembic。
 
@@ -132,7 +132,7 @@ npm.cmd run test:e2e
 
 ## 架构与复用
 
-React + TypeScript + Vite；FastAPI + Pydantic；SQLite + SQLAlchemy/Alembic；API 负责上传/查询，独立单 Worker 领取任务，一个 Agent 通过原生 Tool Calling 选择五个工具。字幕、笔记、题目使用版本化 JSON 主格式，整数毫秒引用原片段。生成结果必须通过结构和跨文档来源校验，才写入有效缓存并标记成功。
+React + TypeScript + Vite；FastAPI + Pydantic；SQLite + SQLAlchemy/Alembic；API 负责上传/查询，独立单 Worker 领取任务，一个 Agent 通过原生 Tool Calling 使用既有五工具及可选上下文工具。字幕、笔记、题目使用版本化 JSON，整数毫秒绑定原片段/实际帧时刻。审核是普通组件；事件通过 SQLite 持久日志跨进程传递，API 定期读库发 SSE，前端保留 REST 刷新回退。
 
 | 模块 | 职责 |
 | --- | --- |
@@ -148,7 +148,17 @@ React + TypeScript + Vite；FastAPI + Pydantic；SQLite + SQLAlchemy/Alembic；A
 
 ## 已知边界
 
-- 只供本机单使用者；未实现认证、多 Agent、OCR、RAG、自动评分、PDF/Word 导出或部署。
+- 只供本机单使用者；未实现认证、多 Agent、跨课程知识库、语义向量检索、自动评分、PDF/Word 导出或部署。
 - 引用匹配保证 quote 来自原片段，不能保证答案语义正确。真实 DeepSeek 质量、成本、长课程性能、真实课程公式抽查仍待付费验收；本轮不调用云端。
 - 长字幕按预算分块并检查全片段覆盖；没有静默截断。笔记分块单独保存经校验的检查点，手动重试复用有效块；损坏块重新生成。预算不足先报错，建议分段另建课程，不自动提高预算。大型结果页面暂未虚拟滚动，浏览超长字幕可能较慢。
 - Markdown/KaTeX 构建包有体积提示，当前本地 MVP 可用，后续可按需加载优化。
+
+## V3 使用说明
+
+上传 MP4 时可勾选“读取画面文字”，默认关闭；本地须自行安装 Tesseract 及需要的语言包，并配置 `VSA_OCR_BINARY` / `VSA_OCR_LANGUAGE`。程序不下载引擎或模型。纯字幕不运行 OCR；无语音但有画面文字的课程可生成 1.2 版笔记和自测，此时没有字幕导出。
+
+默认审核仅检查结构与引用，不能证明答案正确。勾选“审核笔记与答案内容”会使用当前课程模型，增加调用，并与生成共用预算；failed/uncertain 不替换该资料的旧正式版本，最多一次定向重做。旧版本不追溯调用模型。
+
+“在课程原文中查找”直接检索本课程当前来源，不调用模型。聊天可选择“在整门课程中检索证据”，按该笔记的原快照检索并回答；找不到证据时不调用模型。整课笔记仍遍历所有分块。来源区分字幕与画面文字，可跳转视频；OCR 字符和公式须结合画面核对。
+
+开发评测见 [评测规范](docs/EVALUATION_V3_SPEC.md)；详细规划与验收边界见 [V3 路线](docs/ROADMAP_V3.md) 和各阶段报告。真实云模型、OCR 识别质量和长课程性能未验证，不能把离线替身或自建词法检索成绩视为真实课程准确率。

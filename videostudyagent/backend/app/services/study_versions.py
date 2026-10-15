@@ -28,6 +28,7 @@ from app.schemas.iteration import (
     TranscriptSnapshot,
 )
 from app.schemas.study import NotesDocument, QuizDocument, Transcript
+from app.schemas.video_context import NotesDocumentV12, QuizDocumentV12
 from app.services.storage import ArtifactStore, cache_key
 
 
@@ -51,10 +52,14 @@ class VersionReader:
         return self._read(record, {"1.0": Transcript})
 
     def notes(self, record):
-        return self._read(record, {"1.0": NotesDocument, "1.1": NotesDocumentV11})
+        return self._read(
+            record, {"1.0": NotesDocument, "1.1": NotesDocumentV11, "1.2": NotesDocumentV12}
+        )
 
     def quiz(self, record):
-        result = self._read(record, {"1.0": QuizDocument, "1.1": QuizDocumentV11})
+        result = self._read(
+            record, {"1.0": QuizDocument, "1.1": QuizDocumentV11, "1.2": QuizDocumentV12}
+        )
         if result.question_count != record.question_count or result.difficulty != record.difficulty:
             raise StudyError("STORAGE_ERROR", "自测版本参数不一致。", 409, True)
         return result

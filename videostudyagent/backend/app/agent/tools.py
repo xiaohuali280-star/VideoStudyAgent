@@ -12,10 +12,14 @@ from app.schemas.iteration import ProcessingOptions
 from app.schemas.providers import ToolCall, ToolDefinition
 from app.schemas.study import Transcript
 from app.schemas.tasks import TaskStep
+from app.schemas.video_context import VideoContextSnapshot
+from app.services.context_generation import ContextGenerationService
 from app.services.generation import GenerationService
 from app.services.note_documents import NoteReader
 from app.services.quiz_documents import QuizReader
+from app.services.source_context import validate_context_document
 from app.services.transcription import TranscriptService
+from app.services.video_context import VideoContextService
 
 
 class EmptyArgs(ContractModel):
@@ -30,11 +34,20 @@ class TranscriptArgs(ContractModel):
     transcript_artifact_id: UUID
 
 
+class ContextArgs(ContractModel):
+    context_artifact_id: UUID
+
+
+class ContextQuizArgs(ContextArgs):
+    notes_artifact_id: UUID | None = None
+
+
 class QuizArgs(TranscriptArgs):
     notes_artifact_id: UUID | None = None
 
 
 SPECS = {
+    "prepare_video_context": (EmptyArgs, "准备当前课程字幕与可选画面上下文。", "context", {}),
     "load_subtitles": (
         EmptyArgs,
         "有字幕时加载字幕，得到 transcript；参数为空。",
@@ -63,10 +76,10 @@ SPECS = {
 }
 
 
-def definitions():
+def definitions(specs=None):
     return [
         ToolDefinition(name=name, description=spec[1], parameters=spec[0].model_json_schema())
-        for name, spec in SPECS.items()
+        for name, spec in (specs or SPECS).items()
     ]
 
 
@@ -74,7 +87,33 @@ class StudyTools:
     def __init__(self, task, settings, repository, llm, asr=None):
         self.task, self.settings, self.repository = task, settings, repository
         self.transcription = TranscriptService(settings, repository, asr)
-        self.generation = GenerationService(settings, repository, llm) if llm else None
+        self.context_mode = task.options.enable_ocr or getattr(repository, "context_mode", False)
+        self.specs = dict(SPECS)
+        if self.context_mode:
+            self.specs["generate_notes"] = (
+                ContextArgs,
+                "从 context 生成笔记。",
+                "notes",
+                {"context_artifact_id": "context"},
+            )
+            self.specs["generate_quiz"] = (
+                ContextQuizArgs,
+                "从 context 生成五题。",
+                "quiz",
+                {"context_artifact_id": "context"},
+            )
+        else:
+            self.specs.pop("prepare_video_context")
+        service = ContextGenerationService if self.context_mode else GenerationService
+        self.generation = service(settings, repository, llm) if llm else None
+        self.visual = VideoContextService(
+            settings,
+            repository,
+            asr,
+            ocr=getattr(repository, "ocr_provider", None),
+            frames=getattr(repository, "frame_extractor", None),
+        )
+
         self.store = self.transcription.store
 
     def valid_artifacts(self):
@@ -83,6 +122,7 @@ class StudyTools:
         for kind, schema in [
             ("audio", None),
             ("transcript", Transcript),
+            ("context", VideoContextSnapshot),
             ("notes", NoteReader),
             ("quiz", QuizReader),
         ]:
@@ -93,8 +133,17 @@ class StudyTools:
                 if schema:
                     value = self.store.read_json(artifact, schema)
                     if kind == "notes":
-                        validate_notes(value, documents["transcript"])
-                    if kind == "quiz":
+                        if self.context_mode:
+                            validate_context_document(
+                                value, documents["context"], require_coverage=True
+                            )
+                        else:
+                            validate_notes(value, documents["transcript"])
+                    if kind == "quiz" and self.context_mode:
+                        validate_context_document(
+                            value, documents["context"], notes=documents.get("notes")
+                        )
+                    if kind == "quiz" and not self.context_mode:
                         validate_quiz(
                             value,
                             documents["transcript"],
@@ -123,17 +172,23 @@ class StudyTools:
         return self.required() <= self.valid_artifacts().keys()
 
     def required(self):
-        return ProcessingOptions(
+        required = ProcessingOptions(
             generate_notes=self.task.options.generate_notes,
             generate_quiz=self.task.options.generate_quiz,
         ).required_artifacts()
+        return (required - {"transcript"}) | {"context"} if self.context_mode else required
 
     def definitions(self):
         return [
             item
-            for item in definitions()
+            for item in definitions(self.specs)
             if item.name
             not in {
+                *(
+                    ["load_subtitles", "extract_audio", "transcribe_audio"]
+                    if self.context_mode
+                    else []
+                ),
                 *(["generate_notes"] if not self.task.options.generate_notes else []),
                 *(["generate_quiz"] if not self.task.options.generate_quiz else []),
             }
@@ -141,7 +196,7 @@ class StudyTools:
 
     async def execute(self, call: ToolCall, sequence: int):
         start = monotonic()
-        name = call.name if call.name in SPECS else "unknown"
+        name = call.name if call.name in self.specs else "unknown"
         step = TaskStep(
             id=uuid4(),
             task_id=self.task.id,
@@ -157,8 +212,8 @@ class StudyTools:
                 raise StudyError("UNKNOWN_TOOL", "工具不在允许列表中。", 422)
             if name not in {item.name for item in self.definitions()}:
                 raise StudyError("TOOL_FORBIDDEN", "本次操作未启用该工具。", 422)
-            schema, _, output_kind, required = SPECS[name]
-            definition = next(item for item in definitions() if item.name == name)
+            schema, _, output_kind, required = self.specs[name]
+            definition = next(item for item in definitions(self.specs) if item.name == name)
             absent, blank = unsatisfied_required_args(definition, call.arguments)
             if absent or blank:
                 raise StudyError(
@@ -190,7 +245,13 @@ class StudyTools:
                 step.status = "skipped"
                 cache_hit = False
             else:
-                owner = self.generation if name.startswith("generate_") else self.transcription
+                owner = (
+                    self.visual
+                    if name == "prepare_video_context"
+                    else self.generation
+                    if name.startswith("generate_")
+                    else self.transcription
+                )
                 action = getattr(owner, name)
                 result = action(self.task)
                 artifact = await result if name.startswith("generate_") else result

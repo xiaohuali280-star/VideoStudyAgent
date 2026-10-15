@@ -20,7 +20,11 @@ async def execute_study(task, settings, repository, llm=None, asr=None):
         from app.schemas.providers import ToolCall
 
         tools = StudyTools(task, settings, repository, None, asr)
-        if tools.state()["has_subtitle"]:
+        if tools.context_mode:
+            await tools.execute(
+                ToolCall(id="context", name="prepare_video_context", arguments={}), 1
+            )
+        elif tools.state()["has_subtitle"]:
             await tools.execute(ToolCall(id="prepare", name="load_subtitles", arguments={}), 1)
         else:
             receipt = await tools.execute(

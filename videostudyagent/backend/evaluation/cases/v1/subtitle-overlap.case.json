@@ -1,0 +1,19 @@
+{
+  "case_id": "subtitle-overlap",
+  "suite_version": "1",
+  "scenario": "subtitle-overlap",
+  "provenance": "self_created",
+  "input_sha256": "5e3ea0d13b4bfd4724a8fcfb6f9403418cf98f9d30eb02771dd8db87a6fe8826",
+  "fixture_refs": [
+    "subtitle-overlap.fixture.json"
+  ],
+  "capabilities_required": [],
+  "expected_assertions": {
+    "schema_valid": true,
+    "quotes_valid": true,
+    "timestamps_valid": false
+  },
+  "reference_fact_ids": [
+    "rate-negative"
+  ]
+}

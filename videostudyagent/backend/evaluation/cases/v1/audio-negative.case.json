@@ -1,0 +1,19 @@
+{
+  "case_id": "audio-negative",
+  "suite_version": "1",
+  "scenario": "audio-negative",
+  "provenance": "self_created",
+  "input_sha256": "15b5a10f70460ef8794d71e77de04d849b35b92dd60b19cc3288284374566083",
+  "fixture_refs": [
+    "audio-negative.fixture.json"
+  ],
+  "capabilities_required": [],
+  "expected_assertions": {
+    "schema_valid": true,
+    "quotes_valid": false,
+    "timestamps_valid": true
+  },
+  "reference_fact_ids": [
+    "rate-negative"
+  ]
+}

@@ -48,7 +48,11 @@ def notes_markdown(notes: NotesDocument, transcript: Transcript, language: str):
                 chapter.content_markdown,
                 "",
                 ("Source: " if en else "来源：")
-                + source_times(chapter.source_segment_ids, transcript),
+                + (
+                    context_times(chapter.source_refs, transcript)
+                    if hasattr(chapter, "source_refs")
+                    else source_times(chapter.source_segment_ids, transcript)
+                ),
             ]
         )
     lines.extend(["", "## Key concepts" if en else "## 核心概念", ""])
@@ -74,13 +78,27 @@ def quiz_markdown(quiz: QuizDocument, transcript: Transcript, language: str):
                 question.explanation,
                 "",
                 ("Source: " if en else "来源：")
-                + source_times(question.source_segment_ids, transcript),
+                + (
+                    context_times(question.source_refs, transcript)
+                    if hasattr(question, "source_refs")
+                    else source_times(question.source_segment_ids, transcript)
+                ),
             ]
         )
         for evidence in question.evidence:
             lines.extend(["", *["> " + line for line in evidence.quote.splitlines()]])
         lines.append("")
     return "\n".join(lines)
+
+
+def context_times(refs, context):
+    from app.services.source_context import source_items
+
+    sources = {(s["source_type"], s["source_id"]): s for s in source_items(context)}
+    return ", ".join(
+        f"{ref.source_type} {timestamp(sources[(ref.source_type, ref.source_id)]['start_ms'])}"
+        for ref in refs
+    )
 
 
 class ResultService:
@@ -93,6 +111,41 @@ class ResultService:
         if "course_study_states" in inspect(self.repository.engine).get_table_names():
             study = StudyRepository(self.repository.engine)
             state = study.state(task_id)
+            if state.context_snapshot_id:
+                from app.db.context_repository import VideoContextRepository
+                from app.services.source_context import validate_context_document
+
+                context = VideoContextRepository(study.engine).get(
+                    task_id, state.context_snapshot_id
+                )
+                reader = VersionReader(self.store.root)
+                notes = (
+                    reader.notes(study.notes(task_id, state.notes_revision_id))
+                    if state.notes_revision_id
+                    else None
+                )
+                quiz = (
+                    reader.quiz(study.batch(task_id, state.quiz_batch_id))
+                    if state.quiz_batch_id
+                    else None
+                )
+                if notes:
+                    validate_context_document(notes, context, require_coverage=True)
+                if quiz:
+                    batch = study.batch(task_id, state.quiz_batch_id)
+                    basis = (
+                        reader.notes(study.notes(task_id, batch.notes_revision_id))
+                        if batch.notes_revision_id
+                        else None
+                    )
+                    validate_context_document(quiz, context, notes=basis)
+                return StudyResult(
+                    task_id=task.id,
+                    transcript=context.transcript,
+                    context=context,
+                    notes=notes,
+                    quiz=quiz,
+                )
             if state.transcript_snapshot_id:
                 reader = VersionReader(self.store.root)
                 source = study.snapshot(task_id, state.transcript_snapshot_id)
@@ -126,6 +179,12 @@ class ResultService:
                     )
                 return StudyResult(task_id=task.id, transcript=transcript, notes=notes, quiz=quiz)
         artifacts = {artifact.kind: artifact for artifact in self.repository.artifacts(task_id)}
+        if "context" in artifacts:
+            from app.schemas.video_context import VideoContextSnapshot
+
+            context = self.store.read_json(artifacts["context"], VideoContextSnapshot)
+            # Unpublished candidates are never exposed by the current-result projection.
+            return StudyResult(task_id=task.id, context=context, transcript=context.transcript)
         values = {}
         try:
             for kind, schema in [
@@ -183,6 +242,29 @@ class ResultService:
                 if quiz_batch_id
                 else study.notes(task_id, notes_revision_id)
             )
+            if record.context_snapshot_id:
+                from app.db.context_repository import VideoContextRepository
+                from app.services.source_context import validate_context_document
+
+                context = VideoContextRepository(study.engine).get(
+                    task_id, record.context_snapshot_id
+                )
+                document = reader.quiz(record) if quiz_batch_id else reader.notes(record)
+                basis = (
+                    reader.notes(study.notes(task_id, record.notes_revision_id))
+                    if quiz_batch_id and record.notes_revision_id
+                    else None
+                )
+                validate_context_document(
+                    document, context, require_coverage=not quiz_batch_id, notes=basis
+                )
+                result = StudyResult(
+                    task_id=task.id,
+                    context=context,
+                    transcript=context.transcript,
+                    **({"quiz": document} if quiz_batch_id else {"notes": document}),
+                )
+                return self._export_document(task, result, format, selection)
             transcript = reader.transcript(study.snapshot(task_id, record.transcript_snapshot_id))
             if quiz_batch_id:
                 document = reader.quiz(record)
@@ -209,6 +291,9 @@ class ResultService:
                 result = StudyResult(task_id=task.id, transcript=transcript, notes=document)
         else:
             result = self.result(task_id)
+        return self._export_document(task, result, format, selection)
+
+    def _export_document(self, task, result, format, selection):
         required = (
             "notes"
             if format == "notes.md"
@@ -217,14 +302,18 @@ class ResultService:
             else "transcript"
         )
         document = getattr(result, required)
-        if document is None or result.transcript is None:
+        if document is None:
             raise StudyError("RESULT_NOT_READY", "对应学习资料尚未生成。", 409)
         if format.endswith(".json"):
             content = document.model_dump_json(indent=2) + "\n"
         elif format == "notes.md":
-            content = notes_markdown(document, result.transcript, task.options.output_language)
+            content = notes_markdown(
+                document, result.context or result.transcript, task.options.output_language
+            )
         elif format == "quiz.md":
-            content = quiz_markdown(document, result.transcript, task.options.output_language)
+            content = quiz_markdown(
+                document, result.context or result.transcript, task.options.output_language
+            )
         else:
             content = (
                 "\n\n".join(

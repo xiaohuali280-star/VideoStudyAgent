@@ -13,9 +13,14 @@ from app.api import router
 from app.core.config import Settings
 from app.core.errors import StudyError
 from app.core.upload_limit import UploadLimitMiddleware
+from app.routes.events import router as events_router
+from app.routes.evidence import router as evidence_router
 from app.routes.notes import router as notes_router
+from app.routes.retrieval import router as retrieval_router
+from app.routes.reviews import router as reviews_router
 from app.routes.study import router as study_router
 from app.schemas.common import ErrorInfo, ErrorResponse, ExportFormat, HealthResponse, PublicConfig
+from app.schemas.events import EventSnapshot, OperationEvent
 from app.schemas.iteration import ITERATION_CONTRACTS
 from app.schemas.providers import ModelReply, ModelRequest, ToolCall, ToolDefinition
 from app.schemas.study import NotesDocument, QuizDocument, StudyOptions, Transcript, TranscriptChunk
@@ -32,6 +37,8 @@ from app.schemas.tasks import (
 
 DOMAIN_CONTRACTS = (
     *ITERATION_CONTRACTS,
+    EventSnapshot,
+    OperationEvent,
     StudyOptions,
     Transcript,
     TranscriptChunk,
@@ -71,6 +78,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(router)
     application.include_router(study_router)
     application.include_router(notes_router)
+    application.include_router(evidence_router)
+    application.include_router(reviews_router)
+    application.include_router(retrieval_router)
+    application.include_router(events_router)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

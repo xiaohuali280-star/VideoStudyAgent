@@ -31,7 +31,7 @@ def test_health_needs_no_key_models_or_database(tmp_path):
         "status": "ok",
         "service": "VideoStudyAgent",
         "version": "0.1.0",
-        "stage": 14,
+        "stage": 19,
     }
     assert request(application, "GET", "/api/not-implemented").status_code == 404
     assert not data_dir.exists()
@@ -109,10 +109,15 @@ def test_openapi_snapshot_and_all_component_references():
         "/api/tasks/{task_id}/result",
         "/api/tasks/{task_id}/exports/{format}",
         "/api/tasks/{task_id}/video",
+        "/api/tasks/{task_id}/events",
+        "/api/tasks/{task_id}/evidence/search",
+        "/api/tasks/{task_id}/contexts/{snapshot_id}",
+        "/api/tasks/{task_id}/contexts/{snapshot_id}/frames/{frame_id}",
         "/api/config",
         "/api/tasks/{task_id}/study-state",
         "/api/tasks/{task_id}/operations",
         "/api/tasks/{task_id}/operations/{operation_id}",
+        "/api/tasks/{task_id}/operations/{operation_id}/reviews",
         "/api/tasks/{task_id}/operations/{operation_id}/retry",
         "/api/tasks/{task_id}/operations/{operation_id}/cancel",
         "/api/tasks/{task_id}/quiz-batches",

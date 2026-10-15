@@ -21,13 +21,19 @@ from app.schemas.study import (
     StudyOptions,
     Transcript,
 )
+from app.schemas.video_context import NotesDocumentV12, QuizDocumentV12, VideoContextSnapshot
 
 TaskStatus = Literal["queued", "running", "succeeded", "failed"]
 StepStatus = Literal["pending", "running", "succeeded", "failed", "skipped"]
 ToolName = Literal[
-    "load_subtitles", "extract_audio", "transcribe_audio", "generate_notes", "generate_quiz"
+    "load_subtitles",
+    "extract_audio",
+    "transcribe_audio",
+    "generate_notes",
+    "generate_quiz",
+    "prepare_video_context",
 ]
-ArtifactKind = Literal["audio", "transcript", "notes", "quiz"]
+ArtifactKind = Literal["audio", "transcript", "notes", "quiz", "context"]
 
 
 class StoredObject(ContractModel):
@@ -132,5 +138,6 @@ class StudyResult(DocumentModel):
     task_id: UUID
     available_artifacts: list[ArtifactSummary] = Field(default_factory=list)
     transcript: Transcript | None = None
-    notes: NotesDocument | NotesDocumentV11 | None = None
-    quiz: QuizDocument | QuizDocumentV11 | None = None
+    context: VideoContextSnapshot | None = None
+    notes: NotesDocument | NotesDocumentV11 | NotesDocumentV12 | None = None
+    quiz: QuizDocument | QuizDocumentV11 | QuizDocumentV12 | None = None

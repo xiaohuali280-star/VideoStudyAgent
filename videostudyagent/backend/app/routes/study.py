@@ -16,6 +16,7 @@ from app.schemas.iteration import (
     StudyOperation,
 )
 from app.schemas.study import QuizDocument, QuizDocumentV11
+from app.schemas.video_context import QuizDocumentV12
 from app.services.operations import ensure_study_schema
 from app.services.study_versions import VersionReader
 
@@ -58,6 +59,9 @@ def submit(
     if action.kind not in {"generate_notes", "generate_quiz", "chat_reply", "revise_notes"}:
         raise StudyError("OPERATION_UNAVAILABLE", "此入口仅支持补生成笔记或自测。", 422)
     repo = study_repository(request)
+    from app.services.review_setup import require_review_schema
+
+    require_review_schema(repo.engine)
     if action.kind == "revise_notes":
         from app.services.note_revisions import revision_context
 
@@ -93,7 +97,10 @@ def batches(
     return study_repository(request).quiz_batches(task_id, limit=limit, offset=offset)
 
 
-@router.get("/{task_id}/quiz-batches/{batch_id}", response_model=QuizDocument | QuizDocumentV11)
+@router.get(
+    "/{task_id}/quiz-batches/{batch_id}",
+    response_model=QuizDocument | QuizDocumentV11 | QuizDocumentV12,
+)
 def batch_document(request: Request, task_id: UUID, batch_id: UUID):
     batch = study_repository(request).batch(task_id, batch_id)
     return VersionReader(request.app.state.settings.data_dir).quiz(batch)

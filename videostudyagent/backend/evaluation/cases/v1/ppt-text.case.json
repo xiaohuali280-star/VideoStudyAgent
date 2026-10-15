@@ -1,0 +1,21 @@
+{
+  "case_id": "ppt-text",
+  "suite_version": "1",
+  "scenario": "ppt-text",
+  "provenance": "self_created",
+  "input_sha256": "4c881fbdf985cc790b90ed1be233dc4a95697b3a7caf8621d9c4c60431e0dbc3",
+  "fixture_refs": [
+    "ppt-text.fixture.json"
+  ],
+  "capabilities_required": [
+    "ocr"
+  ],
+  "expected_assertions": {
+    "schema_valid": true,
+    "quotes_valid": true,
+    "timestamps_valid": true
+  },
+  "reference_fact_ids": [
+    "rate-negative"
+  ]
+}

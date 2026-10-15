@@ -38,8 +38,8 @@ export default function QuizBatches({ id, language, difficulty, onSelected }: { 
     setBusy(true); setError("");
     try {
       const state = await getStudyState(id);
-      if (!state.transcript_snapshot_id) return;
-      await submitOperation(id, { kind: "generate_quiz", transcript_snapshot_id: state.transcript_snapshot_id, notes_revision_id: state.notes_revision_id, options: { question_count: 5, difficulty: level, output_language: language } });
+      if ((!state.transcript_snapshot_id && !state.context_snapshot_id)) return;
+      await submitOperation(id, { kind: "generate_quiz", transcript_snapshot_id: state.transcript_snapshot_id, context_snapshot_id: state.context_snapshot_id, notes_revision_id: state.notes_revision_id, options: { question_count: 5, difficulty: level, output_language: language } });
     } catch (e) { setError(friendlyError(e)); setBusy(false); }
   }
   return <div className="batch-controls">

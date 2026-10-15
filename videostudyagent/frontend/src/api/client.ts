@@ -6,13 +6,14 @@ export type TaskDetail = components["schemas"]["TaskDetail"];
 export type StudyResult = components["schemas"]["StudyResult"];
 export type StudyOptions = components["schemas"]["StudyOptions"];
 export type PublicConfig = components["schemas"]["PublicConfig"];
-export type NotesDocument = components["schemas"]["NotesDocument"] | components["schemas"]["NotesDocumentV11"];
-export type QuizDocument = components["schemas"]["QuizDocument"] | components["schemas"]["QuizDocumentV11"];
+export type NotesDocument = components["schemas"]["NotesDocument"] | components["schemas"]["NotesDocumentV11"] | components["schemas"]["NotesDocumentV12"];
+export type QuizDocument = components["schemas"]["QuizDocument"] | components["schemas"]["QuizDocumentV11"] | components["schemas"]["QuizDocumentV12"];
 export type StudyOperation = components["schemas"]["StudyOperation"];
 export type CourseStudyState = components["schemas"]["CourseStudyState"];
 export const getStudyState = (id: string) => jsonRequest<CourseStudyState>(`/api/tasks/${id}/study-state`);
 export const getOperations = (id: string) => jsonRequest<StudyOperation[]>(`/api/tasks/${id}/operations`);
-export const submitOperation = (id: string, request: StudyOperation["request"], key = crypto.randomUUID()) =>
+type RequestInput<T> = T extends { review_policy: infer P } ? Omit<T, "review_policy"> & { review_policy?: P } : T;
+export const submitOperation = (id: string, request: RequestInput<StudyOperation["request"]>, key = crypto.randomUUID()) =>
   jsonRequest<StudyOperation>(`/api/tasks/${id}/operations`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(request) });
 export type Transcript = components["schemas"]["Transcript"];
 export type ExportFormat = PublicConfig["export_formats"][number];
@@ -90,7 +91,7 @@ export async function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
     !("status" in data) || data.status !== "ok" ||
     !("service" in data) || data.service !== "VideoStudyAgent" ||
     !("schema_version" in data) || data.schema_version !== "1.0" ||
-    !("stage" in data) || typeof data.stage !== "number" || !Number.isInteger(data.stage) || data.stage < 1 || data.stage > 14 ||
+    !("stage" in data) || typeof data.stage !== "number" || !Number.isInteger(data.stage) || data.stage < 1 || data.stage > 19 ||
     !("version" in data) || typeof data.version !== "string"
   ) throw new Error("服务返回了不兼容的数据");
   return data as HealthResponse;

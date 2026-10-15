@@ -42,6 +42,19 @@ def test_baseline_migration_is_repeatable_and_persistent(tmp_path):
                 "task_steps",
                 "artifacts",
                 "cache_entries",
+                "video_context_snapshots",
+                "quality_reviews",
+                "review_repairs",
+                "operation_events",
+                "event_retention",
+                "evidence_index_manifests",
+                "evidence_documents",
+                "evidence_fts",
+                "evidence_fts_data",
+                "evidence_fts_idx",
+                "evidence_fts_content",
+                "evidence_fts_docsize",
+                "evidence_fts_config",
             }
             command.downgrade(config, "0001_baseline")
             assert inspect(connection).get_table_names() == ["alembic_version"]

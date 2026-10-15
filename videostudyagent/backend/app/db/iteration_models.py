@@ -53,7 +53,12 @@ class PreferencesRow(Base):
 class NotesRevisionRow(Base):
     __tablename__ = "notes_revisions"
     __table_args__ = (
+        CheckConstraint("transcript_snapshot_id IS NOT NULL OR context_snapshot_id IS NOT NULL"),
         UniqueConstraint("id", "task_id"),
+        ForeignKeyConstraint(
+            ["context_snapshot_id", "task_id"],
+            ["video_context_snapshots.id", "video_context_snapshots.task_id"],
+        ),
         ForeignKeyConstraint(
             ["transcript_snapshot_id", "task_id"],
             ["transcript_snapshots.id", "transcript_snapshots.task_id"],
@@ -68,20 +73,26 @@ class NotesRevisionRow(Base):
     )
     id: Mapped[str] = mapped_column(String, primary_key=True)
     task_id: Mapped[str] = mapped_column(ForeignKey("tasks.id"), index=True)
-    transcript_snapshot_id: Mapped[str] = mapped_column(String)
+    transcript_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
     parent_revision_id: Mapped[str | None] = mapped_column(String, nullable=True)
     operation_id: Mapped[str | None] = mapped_column(String, nullable=True)
     status: Mapped[str] = mapped_column(String)
+    context_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
     payload: Mapped[dict] = mapped_column(JSON)
 
 
 class QuizBatchRow(Base):
     __tablename__ = "quiz_batches"
     __table_args__ = (
+        CheckConstraint("transcript_snapshot_id IS NOT NULL OR context_snapshot_id IS NOT NULL"),
         UniqueConstraint("id", "task_id"),
         UniqueConstraint("task_id", "sequence"),
         UniqueConstraint("task_id", "nonce"),
         CheckConstraint("sequence > 0"),
+        ForeignKeyConstraint(
+            ["context_snapshot_id", "task_id"],
+            ["video_context_snapshots.id", "video_context_snapshots.task_id"],
+        ),
         ForeignKeyConstraint(
             ["transcript_snapshot_id", "task_id"],
             ["transcript_snapshots.id", "transcript_snapshots.task_id"],
@@ -95,11 +106,12 @@ class QuizBatchRow(Base):
     )
     id: Mapped[str] = mapped_column(String, primary_key=True)
     task_id: Mapped[str] = mapped_column(ForeignKey("tasks.id"), index=True)
-    transcript_snapshot_id: Mapped[str] = mapped_column(String)
+    transcript_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
     notes_revision_id: Mapped[str | None] = mapped_column(String, nullable=True)
     operation_id: Mapped[str | None] = mapped_column(String, nullable=True)
     sequence: Mapped[int] = mapped_column(Integer)
     nonce: Mapped[str] = mapped_column(String)
+    context_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
     payload: Mapped[dict] = mapped_column(JSON)
 
 
@@ -107,6 +119,10 @@ class CourseStateRow(Base):
     __tablename__ = "course_study_states"
     __table_args__ = (
         CheckConstraint("revision >= 0"),
+        ForeignKeyConstraint(
+            ["context_snapshot_id", "task_id"],
+            ["video_context_snapshots.id", "video_context_snapshots.task_id"],
+        ),
         ForeignKeyConstraint(
             ["transcript_snapshot_id", "task_id"],
             ["transcript_snapshots.id", "transcript_snapshots.task_id"],
@@ -123,6 +139,7 @@ class CourseStateRow(Base):
     transcript_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
     notes_revision_id: Mapped[str | None] = mapped_column(String, nullable=True)
     quiz_batch_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    context_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
     payload: Mapped[dict] = mapped_column(JSON)
 
 

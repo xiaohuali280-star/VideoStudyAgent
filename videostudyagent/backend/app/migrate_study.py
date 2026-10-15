@@ -15,18 +15,20 @@ from app.db.study_repository import StudyRepository
 from app.services.study_versions import LegacyStudyImporter
 
 
-def migrate(settings):
+def migrate(settings, target="0003_study_foundation"):
     path = settings.data_dir / "app.db"
     with native_lock(settings.data_dir / ".worker.lock").acquire(timeout=0):
         if path.exists():
-            backup = settings.data_dir / "backups" / f"before-v2-{datetime.now():%Y%m%d%H%M%S%f}.db"
+            backup = (
+                settings.data_dir / "backups" / f"before-schema-{datetime.now():%Y%m%d%H%M%S%f}.db"
+            )
             backup.parent.mkdir(parents=True, exist_ok=True)
             with (
                 sqlite3.connect(path.as_uri() + "?mode=ro", uri=True) as source,
-                sqlite3.connect(backup) as target,
+                sqlite3.connect(backup) as backup_connection,
             ):
-                source.backup(target)
-        engine = initialize_database(path, revision="0003_study_foundation")
+                source.backup(backup_connection)
+        engine = initialize_database(path, revision=target)
         try:
             with engine.connect() as connection:
                 tasks = connection.scalars(select(TaskRow.id)).all()
@@ -56,8 +58,21 @@ def main():
         required=True,
         help="Confirm that the API and old Worker have both been stopped",
     )
-    parser.parse_args()
-    print(f"Migration complete: {migrate(Settings())} courses indexed; no model calls.")
+    parser.add_argument(
+        "--target",
+        choices=[
+            "0003_study_foundation",
+            "0004_video_context",
+            "0005_quality_reviews",
+            "0006_evidence_index",
+            "0007_operation_events",
+        ],
+        default="0003_study_foundation",
+    )
+    args = parser.parse_args()
+    print(
+        f"Migration complete: {migrate(Settings(), args.target)} courses indexed; no model calls."
+    )
 
 
 if __name__ == "__main__":

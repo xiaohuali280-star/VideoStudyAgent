@@ -22,10 +22,17 @@ def revision_context(repo, reader, task_id, request):
     state = repo.state(task_id)
     if (
         state.notes_revision_id != base.id
-        or state.transcript_snapshot_id != request.transcript_snapshot_id
+        or state.context_snapshot_id != request.context_snapshot_id
+        or (
+            not request.context_snapshot_id
+            and state.transcript_snapshot_id != request.transcript_snapshot_id
+        )
     ):
         raise StudyError("STUDY_CONFLICT", "正式笔记已变化，请重新选择修改范围。", 409)
-    if base.transcript_snapshot_id != request.transcript_snapshot_id:
+    if base.context_snapshot_id != request.context_snapshot_id or (
+        not request.context_snapshot_id
+        and base.transcript_snapshot_id != request.transcript_snapshot_id
+    ):
         raise StudyError("STUDY_CONFLICT", "笔记与字幕版本不匹配。", 409)
     notes = reader.notes(base)
     ids = set(request.chapter_ids) if request.chapter_ids else {c.id for c in notes.chapters}
@@ -33,6 +40,13 @@ def revision_context(repo, reader, task_id, request):
         c.id for c in notes.chapters
     }:
         raise StudyError("VALIDATION_ERROR", "修改章节无效。", 422)
+    if request.context_snapshot_id:
+        from app.db.context_repository import VideoContextRepository
+        from app.services.source_context import validate_context_document
+
+        context = VideoContextRepository(repo.engine).get(task_id, request.context_snapshot_id)
+        validate_context_document(notes, context, require_coverage=True)
+        return base, notes, context, ids
     transcript = reader.transcript(repo.snapshot(task_id, request.transcript_snapshot_id))
     validate_notes(notes, transcript)
     return base, notes, transcript, ids
@@ -95,12 +109,23 @@ async def revise_notes(operation, settings, repository, bounded):
         }
     )
     validate_notes(document, transcript)
+    from app.services.review_runtime import review_candidate
+
+    document, approval = await review_candidate(
+        operation,
+        document,
+        transcript,
+        base.transcript_snapshot_id,
+        service,
+        lambda d: validate_notes(d, transcript),
+    )
     revision = repo.add_notes(
         NotesRevision(
             id=uuid4(),
             task_id=operation.task_id,
             transcript_snapshot_id=base.transcript_snapshot_id,
             parent_revision_id=base.id,
+            **approval,
             operation_id=operation.id,
             preferences=request.preferences,
             created_at=now(),

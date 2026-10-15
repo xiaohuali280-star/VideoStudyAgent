@@ -1,0 +1,19 @@
+{
+  "case_id": "cross-course",
+  "suite_version": "1",
+  "scenario": "cross-course",
+  "provenance": "self_created",
+  "input_sha256": "83c257e74dba4f4a1710a8ddc77f06b41bc87312ad803c86a284f2c325060d32",
+  "fixture_refs": [
+    "cross-course.fixture.json"
+  ],
+  "capabilities_required": [],
+  "expected_assertions": {
+    "schema_valid": true,
+    "quotes_valid": false,
+    "timestamps_valid": false
+  },
+  "reference_fact_ids": [
+    "rate-negative"
+  ]
+}

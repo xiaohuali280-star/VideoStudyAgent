@@ -9,6 +9,7 @@ from pathlib import Path
 from filelock import Timeout
 
 from app.core.config import Settings
+from app.core.errors import StudyError
 from app.core.locking import native_lock
 from app.db.repository import TaskRepository, initialize_database
 from app.schemas.common import ErrorInfo
@@ -132,11 +133,13 @@ def main():
         with lock.acquire(timeout=0):
             repository = TaskRepository(initialize_database(settings.data_dir / "app.db"))
             try:
-                cleanup_temporary(settings, repository)
                 from app.operation_worker import OperationWorker
                 from app.services.operations import ensure_study_schema
 
                 ensure_study_schema(settings, repository.engine)
+                from app.services.review_setup import require_review_schema
+
+                require_review_schema(repository.engine)
                 repository.recover_interrupted()
                 cleanup_temporary(settings, repository)
                 worker = OperationWorker(settings, repository)
@@ -149,6 +152,9 @@ def main():
                         time.sleep(settings.worker_poll_interval)
             finally:
                 repository.engine.dispose()
+    except StudyError as exc:
+        print(exc.code)
+        return 2
     except Timeout:
         print("WORKER_ALREADY_RUNNING")
         return 2

@@ -8,6 +8,7 @@ from sqlalchemy import exists, insert, select, update
 from sqlalchemy.orm import aliased
 
 from app.core.errors import StudyError
+from app.db.context_models import ContextSnapshotRow
 from app.db.iteration_models import (
     ConversationRow,
     CourseStateRow,
@@ -36,6 +37,7 @@ from app.schemas.iteration import (
     StudyOperation,
     TranscriptSnapshot,
 )
+from app.schemas.video_context import VideoContextSnapshot
 from app.services.storage import cache_key
 
 REQUEST_ADAPTER = TypeAdapter(OperationRequest)
@@ -68,6 +70,16 @@ class StudyRepository:
         return schema.model_validate(payload)
 
     def _references(self, connection, task_id, request):
+        context_id = getattr(request, "context_snapshot_id", None)
+        if context_id:
+            context = self._owned(
+                connection, ContextSnapshotRow, VideoContextSnapshot, task_id, context_id
+            )
+            if getattr(request, "transcript_snapshot_id", None) not in {
+                None,
+                context.transcript_snapshot_id,
+            }:
+                raise conflict("字幕与上下文不匹配。")
         source_id = getattr(request, "transcript_snapshot_id", None)
         if source_id:
             self._owned(connection, SnapshotRow, TranscriptSnapshot, task_id, source_id)
@@ -78,6 +90,8 @@ class StudyRepository:
             notes = self._owned(connection, NotesRevisionRow, NotesRevision, task_id, notes_id)
             if notes.status != "published":
                 raise conflict("操作只能使用已发布的笔记版本。")
+            if context_id and notes.context_snapshot_id != context_id:
+                raise conflict("笔记与上下文不匹配。")
             if source_id and notes.transcript_snapshot_id != source_id:
                 raise conflict("笔记与字幕版本不匹配。")
         conversation_id = getattr(request, "conversation_id", None)
@@ -106,7 +120,7 @@ class StudyRepository:
             )
             if existing:
                 existing = StudyOperation.model_validate(existing)
-                if existing.request_hash != digest:
+                if existing.request_hash != digest and existing.request != request:
                     raise conflict("同一幂等键不能用于不同请求。")
                 return existing
             self._references(connection, task_id, request)
@@ -127,8 +141,19 @@ class StudyRepository:
                 payload=operation.model_dump(mode="json"),
             )
         )
+        from app.db.event_repository import append_event, available
 
-    def _update_operation(self, connection, operation):
+        if available(connection):
+            append_event(connection, operation)
+
+    def _update_operation(
+        self, connection, operation, *, stage="status", completed_units=None, total_units=None
+    ):
+        from app.db.event_repository import append_event, available
+
+        events_available = available(connection)
+        if events_available:
+            operation.event_revision += 1
         connection.execute(
             update(OperationRow)
             .where(OperationRow.id == str(operation.id))
@@ -138,6 +163,27 @@ class StudyRepository:
                 payload=operation.model_dump(mode="json"),
             )
         )
+        if events_available:
+            append_event(
+                connection,
+                operation,
+                stage,
+                completed_units=completed_units,
+                total_units=total_units,
+            )
+
+    def progress(self, task_id, operation_id, stage, *, completed_units=None, total_units=None):
+        with self._write() as connection:
+            operation = self._owned(connection, OperationRow, StudyOperation, task_id, operation_id)
+            if operation.status != "running" or operation.cancel_requested:
+                return
+            self._update_operation(
+                connection,
+                operation,
+                stage=stage,
+                completed_units=completed_units,
+                total_units=total_units,
+            )
 
     def operation(self, task_id, operation_id):
         with self.engine.connect() as connection:
@@ -206,7 +252,7 @@ class StudyRepository:
             ):
                 raise conflict("预留用量超过本次预算。")
             operation.usage = usage
-            self._update_operation(connection, operation)
+            self._update_operation(connection, operation, stage="model_call")
             return operation
 
     def finish(self, task_id, operation_id, *, output=None, error=None):
@@ -232,6 +278,7 @@ class StudyRepository:
     def _validate_output(self, connection, operation, output):
         models = {
             "transcript_snapshot_id": (SnapshotRow, TranscriptSnapshot),
+            "context_snapshot_id": (ContextSnapshotRow, VideoContextSnapshot),
             "notes_revision_id": (NotesRevisionRow, NotesRevision),
             "quiz_batch_id": (QuizBatchRow, QuizBatch),
             "message_id": (MessageRow, ConversationMessage),
@@ -243,7 +290,11 @@ class StudyRepository:
                 documents[name] = self._owned(connection, row, schema, operation.task_id, value)
         kind = operation.request.kind
         if kind == "initial_study":
-            fields = {"transcript_snapshot_id"}
+            fields = {
+                "context_snapshot_id"
+                if operation.request.processing.enable_ocr
+                else "transcript_snapshot_id"
+            }
             if operation.request.processing.generate_notes:
                 fields.add("notes_revision_id")
             if operation.request.processing.generate_quiz:
@@ -259,7 +310,17 @@ class StudyRepository:
             }
         if not fields <= documents.keys():
             raise conflict("操作所需结果尚未齐全。")
-        allowed = fields if kind == "initial_study" else fields | {"transcript_snapshot_id"}
+        allowed = fields | {"transcript_snapshot_id", "context_snapshot_id"}
+        context_id = output.context_snapshot_id or getattr(
+            operation.request, "context_snapshot_id", None
+        )
+        if "context_snapshot_id" in documents:
+            context = documents["context_snapshot_id"]
+            if output.transcript_snapshot_id != context.transcript_snapshot_id:
+                raise conflict("结果来源不一致。")
+        for name in ("notes_revision_id", "quiz_batch_id"):
+            if name in documents and documents[name].context_snapshot_id != context_id:
+                raise conflict("结果上下文版本不匹配。")
         if documents.keys() - allowed:
             raise conflict("操作返回了未启用的结果。")
         source_id = output.transcript_snapshot_id or getattr(
@@ -272,9 +333,14 @@ class StudyRepository:
                 and documents[name].transcript_snapshot_id != source_id
             ):
                 raise conflict("结果字幕版本不匹配。")
+        for field in ("notes_revision_id", "quiz_batch_id"):
+            if field in documents:
+                from app.db.review_repository import require_approved
+
+                require_approved(connection, documents[field])
         if "quiz_batch_id" in documents:
             batch = documents["quiz_batch_id"]
-            if batch.question_count != 5 or batch.document_schema_version != "1.1":
+            if batch.question_count != 5 or batch.document_schema_version not in {"1.1", "1.2"}:
                 raise conflict("新操作必须生成五题新版自测。")
             if (
                 kind == "generate_quiz"
@@ -418,16 +484,30 @@ class StudyRepository:
             )
             return [schema.model_validate(value) for value in values]
 
-    def add_notes(self, revision):
-        revision = NotesRevision.model_validate(revision)
-        with self._write() as connection:
+    def _version_source(self, connection, item):
+        if item.transcript_snapshot_id:
             self._owned(
                 connection,
                 SnapshotRow,
                 TranscriptSnapshot,
-                revision.task_id,
-                revision.transcript_snapshot_id,
+                item.task_id,
+                item.transcript_snapshot_id,
             )
+        if item.context_snapshot_id:
+            context = self._owned(
+                connection,
+                ContextSnapshotRow,
+                VideoContextSnapshot,
+                item.task_id,
+                item.context_snapshot_id,
+            )
+            if context.transcript_snapshot_id != item.transcript_snapshot_id:
+                raise conflict("版本来源与上下文不一致。")
+
+    def add_notes(self, revision):
+        revision = NotesRevision.model_validate(revision)
+        with self._write() as connection:
+            self._version_source(connection, revision)
             for field, row, schema in (
                 ("parent_revision_id", NotesRevisionRow, NotesRevision),
                 ("operation_id", OperationRow, StudyOperation),
@@ -442,7 +522,14 @@ class StudyRepository:
                 {
                     "id": str(revision.id),
                     "task_id": str(revision.task_id),
-                    "transcript_snapshot_id": str(revision.transcript_snapshot_id),
+                    "transcript_snapshot_id": str(revision.transcript_snapshot_id)
+                    if revision.transcript_snapshot_id
+                    else None,
+                    **(
+                        {"context_snapshot_id": str(revision.context_snapshot_id)}
+                        if revision.context_snapshot_id
+                        else {}
+                    ),
                     "parent_revision_id": str(revision.parent_revision_id)
                     if revision.parent_revision_id
                     else None,
@@ -458,13 +545,7 @@ class StudyRepository:
     def add_batch(self, batch):
         batch = QuizBatch.model_validate(batch)
         with self._write() as connection:
-            self._owned(
-                connection,
-                SnapshotRow,
-                TranscriptSnapshot,
-                batch.task_id,
-                batch.transcript_snapshot_id,
-            )
+            self._version_source(connection, batch)
             if batch.notes_revision_id:
                 notes = self._owned(
                     connection,
@@ -473,7 +554,10 @@ class StudyRepository:
                     batch.task_id,
                     batch.notes_revision_id,
                 )
-                if notes.transcript_snapshot_id != batch.transcript_snapshot_id:
+                if (
+                    notes.transcript_snapshot_id != batch.transcript_snapshot_id
+                    or notes.context_snapshot_id != batch.context_snapshot_id
+                ):
                     raise conflict("自测与笔记的字幕版本不匹配。")
             if batch.operation_id:
                 self._owned(
@@ -487,7 +571,14 @@ class StudyRepository:
                 {
                     "id": str(batch.id),
                     "task_id": str(batch.task_id),
-                    "transcript_snapshot_id": str(batch.transcript_snapshot_id),
+                    "transcript_snapshot_id": str(batch.transcript_snapshot_id)
+                    if batch.transcript_snapshot_id
+                    else None,
+                    **(
+                        {"context_snapshot_id": str(batch.context_snapshot_id)}
+                        if batch.context_snapshot_id
+                        else {}
+                    ),
                     "notes_revision_id": str(batch.notes_revision_id)
                     if batch.notes_revision_id
                     else None,
@@ -515,6 +606,9 @@ class StudyRepository:
     def _save_state(self, connection, state):
         values = state.model_dump(mode="json")
         values.pop("schema_version")
+        if not state.context_snapshot_id:
+            # Old 0003 stores have no context column. Existing legacy writes remain supported.
+            values.pop("context_snapshot_id", None)
         values["payload"] = state.model_dump(mode="json")
         exists = connection.scalar(
             select(CourseStateRow.task_id).where(CourseStateRow.task_id == str(state.task_id))
@@ -540,6 +634,27 @@ class StudyRepository:
                 update={
                     "revision": state.revision + 1,
                     "transcript_snapshot_id": UUID(str(snapshot_id)),
+                    "context_snapshot_id": None,
+                    "notes_revision_id": None,
+                    "quiz_batch_id": None,
+                }
+            )
+            self._save_state(connection, state)
+            return state
+
+    def set_context_source(self, task_id, snapshot_id, *, expected_revision):
+        with self._write() as connection:
+            context = self._owned(
+                connection, ContextSnapshotRow, VideoContextSnapshot, task_id, snapshot_id
+            )
+            state = self._state(connection, task_id)
+            if state.revision != expected_revision:
+                raise conflict()
+            state = state.model_copy(
+                update={
+                    "revision": state.revision + 1,
+                    "context_snapshot_id": context.id,
+                    "transcript_snapshot_id": context.transcript_snapshot_id,
                     "notes_revision_id": None,
                     "quiz_batch_id": None,
                 }
@@ -557,8 +672,12 @@ class StudyRepository:
             if (
                 state.notes_revision_id != expected
                 or state.transcript_snapshot_id != revision.transcript_snapshot_id
+                or state.context_snapshot_id != revision.context_snapshot_id
             ):
                 raise conflict("笔记或字幕版本已变化，请重新核对。")
+            from app.db.review_repository import require_approved
+
+            require_approved(connection, revision)
             if revision.discarded:
                 raise conflict("草稿已放弃，不能应用。")
             if revision.status == "draft" and revision.parent_revision_id != expected:
@@ -595,10 +714,14 @@ class StudyRepository:
         with self._write() as connection:
             batch = self._owned(connection, QuizBatchRow, QuizBatch, task_id, batch_id)
             state = self._state(connection, task_id)
+            from app.db.review_repository import require_approved
+
+            require_approved(connection, batch)
             expected = UUID(str(expected_current_id)) if expected_current_id else None
             if (
                 state.quiz_batch_id != expected
                 or state.transcript_snapshot_id != batch.transcript_snapshot_id
+                or state.context_snapshot_id != batch.context_snapshot_id
             ):
                 raise conflict()
             state = state.model_copy(
@@ -703,6 +826,7 @@ class StudyRepository:
                 or 0
             )
             record = ConversationMessage(
+                schema_version="1.2" if notes.context_snapshot_id else "1.1",
                 id=uuid4(),
                 task_id=task_id,
                 conversation_id=conversation_id,

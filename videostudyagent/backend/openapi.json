@@ -733,6 +733,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/QuizDocumentV11"
+                    },
+                    {
+                      "$ref": "#/components/schemas/QuizDocumentV12"
                     }
                   ],
                   "title": "Response Batch Document Api Tasks  Task Id  Quiz Batches  Batch Id  Get"
@@ -1240,6 +1243,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/NotesDocumentV11"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NotesDocumentV12"
                     }
                   ],
                   "title": "Response Revision Document Api Tasks  Task Id  Notes Revisions  Revision Id  Get"
@@ -1376,6 +1382,322 @@
         }
       }
     },
+    "/api/tasks/{task_id}/contexts/{snapshot_id}": {
+      "get": {
+        "tags": [
+          "evidence"
+        ],
+        "summary": "Context",
+        "operationId": "context_api_tasks__task_id__contexts__snapshot_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "snapshot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Snapshot Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoContextSnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/contexts/{snapshot_id}/frames/{frame_id}": {
+      "get": {
+        "tags": [
+          "evidence"
+        ],
+        "summary": "Frame",
+        "operationId": "frame_api_tasks__task_id__contexts__snapshot_id__frames__frame_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "snapshot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Snapshot Id"
+            }
+          },
+          {
+            "name": "frame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Frame Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/operations/{operation_id}/reviews": {
+      "get": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Reviews",
+        "operationId": "reviews_api_tasks__task_id__operations__operation_id__reviews_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "operation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Operation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewReport"
+                  },
+                  "title": "Response Reviews Api Tasks  Task Id  Operations  Operation Id  Reviews Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/evidence/search": {
+      "post": {
+        "tags": [
+          "retrieval"
+        ],
+        "summary": "Search",
+        "operationId": "search_api_tasks__task_id__evidence_search_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceSearchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/events": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Events",
+        "operationId": "events_api_tasks__task_id__events_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 9007199254740991,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "name": "operation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operation Id"
+            }
+          },
+          {
+            "name": "last-event-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -1449,7 +1771,8 @@
               "audio",
               "transcript",
               "notes",
-              "quiz"
+              "quiz",
+              "context"
             ],
             "title": "Kind",
             "type": "string"
@@ -1472,6 +1795,15 @@
       },
       "ChatReplyRequest-Input": {
         "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "selected_chapters",
+              "course_retrieval"
+            ],
+            "title": "Scope",
+            "default": "selected_chapters"
+          },
           "kind": {
             "type": "string",
             "const": "chat_reply",
@@ -1519,6 +1851,15 @@
       },
       "ChatReplyRequest-Output": {
         "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "selected_chapters",
+              "course_retrieval"
+            ],
+            "title": "Scope",
+            "default": "selected_chapters"
+          },
           "kind": {
             "type": "string",
             "const": "chat_reply",
@@ -1557,6 +1898,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "scope",
           "kind",
           "conversation_id",
           "notes_revision_id",
@@ -1564,6 +1906,50 @@
           "message"
         ],
         "title": "ChatReplyRequest"
+      },
+      "ContextChapter": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "content_markdown": {
+            "minLength": 1,
+            "title": "Content Markdown",
+            "type": "string"
+          },
+          "source_segment_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Segment Ids",
+            "type": "array"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "minItems": 1,
+            "title": "Source Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content_markdown",
+          "source_segment_ids",
+          "source_refs"
+        ],
+        "title": "ContextChapter",
+        "type": "object"
       },
       "Conversation": {
         "additionalProperties": false,
@@ -1603,8 +1989,11 @@
         "additionalProperties": false,
         "properties": {
           "schema_version": {
-            "const": "1.1",
             "default": "1.1",
+            "enum": [
+              "1.1",
+              "1.2"
+            ],
             "title": "Schema Version",
             "type": "string"
           },
@@ -1672,7 +2061,14 @@
           },
           "citations": {
             "items": {
-              "$ref": "#/components/schemas/SourceEvidence"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SourceEvidence"
+                },
+                {
+                  "$ref": "#/components/schemas/EvidenceRef"
+                }
+              ]
             },
             "maxItems": 20,
             "title": "Citations",
@@ -1762,6 +2158,19 @@
             "default": null,
             "title": "Transcript Snapshot Id"
           },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context Snapshot Id"
+          },
           "notes_revision_id": {
             "anyOf": [
               {
@@ -1794,6 +2203,7 @@
           "task_id",
           "revision",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "notes_revision_id",
           "quiz_batch_id"
         ],
@@ -1860,8 +2270,342 @@
         ],
         "title": "ErrorResponse"
       },
+      "EvidenceFrame": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "video_asset_sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Video Asset Sha256",
+            "type": "string"
+          },
+          "timestamp_ms": {
+            "minimum": 0,
+            "title": "Timestamp Ms",
+            "type": "integer"
+          },
+          "storage_key": {
+            "pattern": "^tasks/[a-f0-9-]+/frames/[a-f0-9-]+\\.png$",
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "width": {
+            "exclusiveMinimum": 0,
+            "title": "Width",
+            "type": "integer"
+          },
+          "height": {
+            "exclusiveMinimum": 0,
+            "title": "Height",
+            "type": "integer"
+          },
+          "extract_version": {
+            "const": "pts-scene-v1",
+            "default": "pts-scene-v1",
+            "title": "Extract Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "video_asset_sha256",
+          "timestamp_ms",
+          "storage_key",
+          "sha256",
+          "width",
+          "height",
+          "extract_version"
+        ],
+        "title": "EvidenceFrame",
+        "type": "object"
+      },
+      "EvidenceHit": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Snapshot Id"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "transcript",
+              "ocr"
+            ],
+            "title": "Source Type"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "start_ms": {
+            "type": "integer",
+            "title": "Start Ms"
+          },
+          "end_ms": {
+            "type": "integer",
+            "title": "End Ms"
+          },
+          "raw_text": {
+            "type": "string",
+            "title": "Raw Text"
+          },
+          "frame_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Id"
+          },
+          "score_components": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Score Components"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "task_id",
+          "snapshot_id",
+          "source_type",
+          "source_id",
+          "start_ms",
+          "end_ms",
+          "raw_text",
+          "frame_id",
+          "score_components"
+        ],
+        "title": "EvidenceHit"
+      },
+      "EvidenceQuery": {
+        "properties": {
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Snapshot Id"
+          },
+          "snapshot_type": {
+            "type": "string",
+            "enum": [
+              "transcript",
+              "context"
+            ],
+            "title": "Snapshot Type"
+          },
+          "notes_revision_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes Revision Id"
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Query"
+          },
+          "top_k": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "default": 5
+          },
+          "start_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Ms"
+          },
+          "end_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Ms"
+          },
+          "source_types": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "transcript",
+                "ocr"
+              ]
+            },
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Source Types",
+            "default": [
+              "transcript",
+              "ocr"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snapshot_id",
+          "snapshot_type",
+          "query"
+        ],
+        "title": "EvidenceQuery"
+      },
+      "EvidenceRef": {
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "format": "uuid",
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "source_type": {
+            "enum": [
+              "transcript",
+              "ocr"
+            ],
+            "title": "Source Type",
+            "type": "string"
+          },
+          "source_id": {
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "quote": {
+            "minLength": 1,
+            "title": "Quote",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "snapshot_id",
+          "source_type",
+          "source_id",
+          "quote"
+        ],
+        "title": "EvidenceRef",
+        "type": "object"
+      },
+      "EvidenceSearchResult": {
+        "properties": {
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceHit"
+            },
+            "type": "array",
+            "title": "Hits"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "lexical_fts5",
+              "scoped_source_fallback"
+            ],
+            "title": "Mode"
+          },
+          "scanned_sources": {
+            "type": "integer",
+            "title": "Scanned Sources"
+          },
+          "total_sources": {
+            "type": "integer",
+            "title": "Total Sources"
+          },
+          "index_generation": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Index Generation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hits",
+          "warnings",
+          "mode",
+          "scanned_sources",
+          "total_sources",
+          "index_generation"
+        ],
+        "title": "EvidenceSearchResult"
+      },
       "GenerateNotesRequest-Input": {
         "properties": {
+          "review_policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "default": "hard_only"
+          },
           "kind": {
             "type": "string",
             "const": "generate_notes",
@@ -1869,9 +2613,28 @@
             "default": "generate_notes"
           },
           "transcript_snapshot_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Snapshot Id"
           },
           "output_language": {
             "type": "string",
@@ -1885,13 +2648,19 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "transcript_snapshot_id"
-        ],
         "title": "GenerateNotesRequest"
       },
       "GenerateNotesRequest-Output": {
         "properties": {
+          "review_policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "default": "hard_only"
+          },
           "kind": {
             "type": "string",
             "const": "generate_notes",
@@ -1899,9 +2668,28 @@
             "default": "generate_notes"
           },
           "transcript_snapshot_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Snapshot Id"
           },
           "output_language": {
             "type": "string",
@@ -1916,8 +2704,10 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "review_policy",
           "kind",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "output_language",
           "preferences"
         ],
@@ -1925,6 +2715,15 @@
       },
       "GenerateQuizRequest-Input": {
         "properties": {
+          "review_policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "default": "hard_only"
+          },
           "kind": {
             "type": "string",
             "const": "generate_quiz",
@@ -1932,9 +2731,28 @@
             "default": "generate_quiz"
           },
           "transcript_snapshot_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Snapshot Id"
           },
           "notes_revision_id": {
             "anyOf": [
@@ -1954,13 +2772,19 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "transcript_snapshot_id"
-        ],
         "title": "GenerateQuizRequest"
       },
       "GenerateQuizRequest-Output": {
         "properties": {
+          "review_policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "default": "hard_only"
+          },
           "kind": {
             "type": "string",
             "const": "generate_quiz",
@@ -1968,9 +2792,28 @@
             "default": "generate_quiz"
           },
           "transcript_snapshot_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Snapshot Id"
           },
           "notes_revision_id": {
             "anyOf": [
@@ -1991,8 +2834,10 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "review_policy",
           "kind",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "notes_revision_id",
           "options"
         ],
@@ -2037,10 +2882,10 @@
           },
           "stage": {
             "type": "integer",
-            "maximum": 14.0,
+            "maximum": 19.0,
             "minimum": 1.0,
             "title": "Stage",
-            "default": 14
+            "default": 19
           }
         },
         "additionalProperties": false,
@@ -2056,6 +2901,15 @@
       },
       "InitialStudyRequest-Input": {
         "properties": {
+          "review_policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "default": "hard_only"
+          },
           "kind": {
             "type": "string",
             "const": "initial_study",
@@ -2078,6 +2932,15 @@
       },
       "InitialStudyRequest-Output": {
         "properties": {
+          "review_policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "default": "hard_only"
+          },
           "kind": {
             "type": "string",
             "const": "initial_study",
@@ -2097,6 +2960,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "review_policy",
           "kind",
           "processing",
           "quiz",
@@ -2373,6 +3237,69 @@
         "title": "NotesDocumentV11",
         "type": "object"
       },
+      "NotesDocumentV12": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.2",
+            "default": "1.2",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "learning_objectives": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "chapters": {
+            "items": {
+              "$ref": "#/components/schemas/ContextChapter"
+            },
+            "minItems": 1,
+            "title": "Chapters",
+            "type": "array"
+          },
+          "key_concepts": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Key Concepts",
+            "type": "array"
+          },
+          "summary": {
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "context_snapshot_id": {
+            "format": "uuid",
+            "title": "Context Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "title",
+          "learning_objectives",
+          "chapters",
+          "key_concepts",
+          "summary",
+          "context_snapshot_id"
+        ],
+        "title": "NotesDocumentV12",
+        "type": "object"
+      },
       "NotesRevision": {
         "additionalProperties": false,
         "properties": {
@@ -2392,6 +3319,35 @@
             "title": "Schema Version",
             "type": "string"
           },
+          "review_policy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hard_only",
+                  "semantic"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Review Policy"
+          },
+          "review_report_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Review Report Id"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2403,9 +3359,30 @@
             "type": "string"
           },
           "transcript_snapshot_id": {
-            "format": "uuid",
-            "title": "Transcript Snapshot Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context Snapshot Id"
           },
           "parent_revision_id": {
             "anyOf": [
@@ -2451,7 +3428,8 @@
             "default": "1.1",
             "enum": [
               "1.0",
-              "1.1"
+              "1.1",
+              "1.2"
             ],
             "title": "Document Schema Version",
             "type": "string"
@@ -2469,9 +3447,12 @@
           "storage_key",
           "sha256",
           "schema_version",
+          "review_policy",
+          "review_report_id",
           "id",
           "task_id",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "parent_revision_id",
           "operation_id",
           "status",
@@ -2481,6 +3462,100 @@
           "created_at"
         ],
         "title": "NotesRevision",
+        "type": "object"
+      },
+      "OcrObservation": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "frame_id": {
+            "format": "uuid",
+            "title": "Frame Id",
+            "type": "string"
+          },
+          "raw_text": {
+            "title": "Raw Text",
+            "type": "string"
+          },
+          "bbox": {
+            "maxItems": 4,
+            "minItems": 4,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Bbox",
+            "type": "array"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "maximum": 100,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Confidence"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "succeeded",
+              "empty",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Code"
+          }
+        },
+        "required": [
+          "id",
+          "frame_id",
+          "raw_text",
+          "bbox",
+          "confidence",
+          "engine_version",
+          "language",
+          "status",
+          "error_code"
+        ],
+        "title": "OcrObservation",
         "type": "object"
       },
       "OperationAttempt": {
@@ -2559,6 +3634,19 @@
             "default": null,
             "title": "Transcript Snapshot Id"
           },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context Snapshot Id"
+          },
           "notes_revision_id": {
             "anyOf": [
               {
@@ -2601,6 +3689,7 @@
         },
         "required": [
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "notes_revision_id",
           "quiz_batch_id",
           "message_id"
@@ -2694,6 +3783,11 @@
       },
       "ProcessingOptions-Input": {
         "properties": {
+          "enable_ocr": {
+            "type": "boolean",
+            "title": "Enable Ocr",
+            "default": false
+          },
           "generate_notes": {
             "type": "boolean",
             "title": "Generate Notes",
@@ -2711,6 +3805,11 @@
       },
       "ProcessingOptions-Output": {
         "properties": {
+          "enable_ocr": {
+            "type": "boolean",
+            "title": "Enable Ocr",
+            "default": false
+          },
           "generate_notes": {
             "type": "boolean",
             "title": "Generate Notes",
@@ -2725,6 +3824,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "enable_ocr",
           "generate_notes",
           "generate_quiz"
         ],
@@ -2971,6 +4071,101 @@
         "title": "QuestionV11",
         "type": "object"
       },
+      "QuestionV12": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "short_answer",
+            "default": "short_answer",
+            "title": "Type",
+            "type": "string"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "chapter_id": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Chapter Id"
+          },
+          "question": {
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "answer": {
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "explanation": {
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "source_segment_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Segment Ids",
+            "type": "array"
+          },
+          "evidence": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SourceEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "minItems": 1,
+            "title": "Source Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "difficulty",
+          "chapter_id",
+          "question",
+          "answer",
+          "explanation",
+          "source_segment_ids",
+          "evidence",
+          "source_refs"
+        ],
+        "title": "QuestionV12",
+        "type": "object"
+      },
       "QuizBatch": {
         "additionalProperties": false,
         "properties": {
@@ -2990,6 +4185,35 @@
             "title": "Schema Version",
             "type": "string"
           },
+          "review_policy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hard_only",
+                  "semantic"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Review Policy"
+          },
+          "review_report_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Review Report Id"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -3001,9 +4225,30 @@
             "type": "string"
           },
           "transcript_snapshot_id": {
-            "format": "uuid",
-            "title": "Transcript Snapshot Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context Snapshot Id"
           },
           "notes_revision_id": {
             "anyOf": [
@@ -3062,7 +4307,8 @@
             "default": "1.1",
             "enum": [
               "1.0",
-              "1.1"
+              "1.1",
+              "1.2"
             ],
             "title": "Document Schema Version",
             "type": "string"
@@ -3077,9 +4323,12 @@
           "storage_key",
           "sha256",
           "schema_version",
+          "review_policy",
+          "review_report_id",
           "id",
           "task_id",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "notes_revision_id",
           "operation_id",
           "sequence",
@@ -3179,6 +4428,56 @@
         "title": "QuizDocumentV11",
         "type": "object"
       },
+      "QuizDocumentV12": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.2",
+            "default": "1.2",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "question_count": {
+            "default": 5,
+            "maximum": 5,
+            "minimum": 5,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionV12"
+            },
+            "maxItems": 5,
+            "minItems": 5,
+            "title": "Questions",
+            "type": "array"
+          },
+          "context_snapshot_id": {
+            "format": "uuid",
+            "title": "Context Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "question_count",
+          "difficulty",
+          "questions",
+          "context_snapshot_id"
+        ],
+        "title": "QuizDocumentV12",
+        "type": "object"
+      },
       "QuizGenerationOptions-Input": {
         "properties": {
           "question_count": {
@@ -3244,8 +4543,213 @@
         ],
         "title": "QuizGenerationOptions"
       },
+      "ReviewIssue": {
+        "properties": {
+          "target_id": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Target Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "coverage",
+              "unsupported_answer",
+              "conflict",
+              "invalid_source",
+              "review_unavailable"
+            ],
+            "title": "Type"
+          },
+          "suggestion": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Suggestion"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Source Refs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target_id",
+          "type",
+          "suggestion",
+          "source_refs"
+        ],
+        "title": "ReviewIssue"
+      },
+      "ReviewReport": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "failed",
+              "uncertain"
+            ],
+            "title": "Status"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewIssue"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Issues"
+          },
+          "required_source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Required Source Ids"
+          },
+          "required_time_ranges": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Required Time Ranges"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Id"
+          },
+          "target_document_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Target Document Sha256"
+          },
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "notes",
+              "quiz"
+            ],
+            "title": "Target Kind"
+          },
+          "source_snapshot_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Snapshot Id"
+          },
+          "policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Policy"
+          },
+          "policy_version": {
+            "type": "string",
+            "const": "review-v1",
+            "title": "Policy Version",
+            "default": "review-v1"
+          },
+          "reviewer_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Model"
+          },
+          "prompt_version": {
+            "type": "string",
+            "const": "critic-v1",
+            "title": "Prompt Version",
+            "default": "critic-v1"
+          },
+          "round": {
+            "type": "integer",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Round"
+          },
+          "usage_delta": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Usage Delta"
+          },
+          "measurement_scope": {
+            "type": "string",
+            "enum": [
+              "hard_checks",
+              "model_judgment"
+            ],
+            "title": "Measurement Scope"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "issues",
+          "required_source_ids",
+          "required_time_ranges",
+          "id",
+          "task_id",
+          "operation_id",
+          "target_document_sha256",
+          "target_kind",
+          "source_snapshot_id",
+          "policy",
+          "policy_version",
+          "reviewer_model",
+          "prompt_version",
+          "round",
+          "usage_delta",
+          "measurement_scope"
+        ],
+        "title": "ReviewReport"
+      },
       "ReviseNotesRequest-Input": {
         "properties": {
+          "review_policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "default": "hard_only"
+          },
           "kind": {
             "type": "string",
             "const": "revise_notes",
@@ -3253,9 +4757,28 @@
             "default": "revise_notes"
           },
           "transcript_snapshot_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Snapshot Id"
           },
           "base_revision_id": {
             "type": "string",
@@ -3286,7 +4809,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "transcript_snapshot_id",
           "base_revision_id",
           "preferences",
           "instruction"
@@ -3295,6 +4817,15 @@
       },
       "ReviseNotesRequest-Output": {
         "properties": {
+          "review_policy": {
+            "type": "string",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "default": "hard_only"
+          },
           "kind": {
             "type": "string",
             "const": "revise_notes",
@@ -3302,9 +4833,28 @@
             "default": "revise_notes"
           },
           "transcript_snapshot_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Snapshot Id"
           },
           "base_revision_id": {
             "type": "string",
@@ -3335,8 +4885,10 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "review_policy",
           "kind",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "base_revision_id",
           "chapter_ids",
           "preferences",
@@ -3375,6 +4927,12 @@
             "default": "1.1",
             "title": "Schema Version",
             "type": "string"
+          },
+          "event_revision": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Event Revision",
+            "type": "integer"
           },
           "id": {
             "format": "uuid",
@@ -3519,6 +5077,7 @@
         },
         "required": [
           "schema_version",
+          "event_revision",
           "id",
           "task_id",
           "request",
@@ -3584,6 +5143,20 @@
             "default": null,
             "title": "Transcript Language"
           },
+          "enable_ocr": {
+            "default": false,
+            "title": "Enable Ocr",
+            "type": "boolean"
+          },
+          "review_policy": {
+            "default": "hard_only",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "type": "string"
+          },
           "generate_notes": {
             "default": true,
             "title": "Generate Notes",
@@ -3601,6 +5174,8 @@
           "question_type",
           "output_language",
           "transcript_language",
+          "enable_ocr",
+          "review_policy",
           "generate_notes",
           "generate_quiz"
         ],
@@ -3639,6 +5214,17 @@
             ],
             "default": null
           },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoContextSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
           "notes": {
             "anyOf": [
               {
@@ -3646,6 +5232,9 @@
               },
               {
                 "$ref": "#/components/schemas/NotesDocumentV11"
+              },
+              {
+                "$ref": "#/components/schemas/NotesDocumentV12"
               },
               {
                 "type": "null"
@@ -3663,6 +5252,9 @@
                 "$ref": "#/components/schemas/QuizDocumentV11"
               },
               {
+                "$ref": "#/components/schemas/QuizDocumentV12"
+              },
+              {
                 "type": "null"
               }
             ],
@@ -3675,6 +5267,7 @@
           "task_id",
           "available_artifacts",
           "transcript",
+          "context",
           "notes",
           "quiz"
         ],
@@ -3723,7 +5316,8 @@
                   "extract_audio",
                   "transcribe_audio",
                   "generate_notes",
-                  "generate_quiz"
+                  "generate_quiz",
+                  "prepare_video_context"
                 ],
                 "type": "string"
               },
@@ -3879,7 +5473,8 @@
                   "extract_audio",
                   "transcribe_audio",
                   "generate_notes",
-                  "generate_quiz"
+                  "generate_quiz",
+                  "prepare_video_context"
                 ],
                 "type": "string"
               },
@@ -4137,9 +5732,211 @@
         ],
         "title": "ValidationError"
       },
+      "VideoContextSegment": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "start_ms": {
+            "minimum": 0,
+            "title": "Start Ms",
+            "type": "integer"
+          },
+          "end_ms": {
+            "minimum": 0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "transcript_segment_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Transcript Segment Ids",
+            "type": "array"
+          },
+          "ocr_observation_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Ocr Observation Ids",
+            "type": "array"
+          },
+          "frame_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Frame Ids",
+            "type": "array"
+          },
+          "source_types": {
+            "default": [],
+            "items": {
+              "enum": [
+                "transcript",
+                "ocr"
+              ],
+              "type": "string"
+            },
+            "title": "Source Types",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "start_ms",
+          "end_ms",
+          "transcript_segment_ids",
+          "ocr_observation_ids",
+          "frame_ids",
+          "source_types"
+        ],
+        "title": "VideoContextSegment",
+        "type": "object"
+      },
+      "VideoContextSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "1.2",
+            "default": "1.2",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "video_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Video Asset Id"
+          },
+          "transcript_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Snapshot Id"
+          },
+          "transcript": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Transcript"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "frames": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EvidenceFrame"
+            },
+            "title": "Frames",
+            "type": "array"
+          },
+          "observations": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/OcrObservation"
+            },
+            "title": "Observations",
+            "type": "array"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/VideoContextSegment"
+            },
+            "title": "Segments",
+            "type": "array"
+          },
+          "branch_statuses": {
+            "additionalProperties": {
+              "enum": [
+                "succeeded",
+                "failed",
+                "disabled",
+                "empty"
+              ],
+              "type": "string"
+            },
+            "title": "Branch Statuses",
+            "type": "object"
+          },
+          "warnings": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          },
+          "manifest_sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "config_version": {
+            "const": "context-v1",
+            "default": "context-v1",
+            "title": "Config Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "id",
+          "task_id",
+          "video_asset_id",
+          "transcript_snapshot_id",
+          "transcript",
+          "frames",
+          "observations",
+          "segments",
+          "branch_statuses",
+          "warnings",
+          "manifest_sha256",
+          "config_version"
+        ],
+        "title": "VideoContextSnapshot",
+        "type": "object"
+      },
       "ProcessingOptions": {
         "additionalProperties": false,
         "properties": {
+          "enable_ocr": {
+            "default": false,
+            "title": "Enable Ocr",
+            "type": "boolean"
+          },
           "generate_notes": {
             "default": true,
             "title": "Generate Notes",
@@ -4152,6 +5949,7 @@
           }
         },
         "required": [
+          "enable_ocr",
           "generate_notes",
           "generate_quiz"
         ],
@@ -4257,6 +6055,15 @@
       "InitialStudyRequest": {
         "additionalProperties": false,
         "properties": {
+          "review_policy": {
+            "default": "hard_only",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "type": "string"
+          },
           "kind": {
             "const": "initial_study",
             "default": "initial_study",
@@ -4274,6 +6081,7 @@
           }
         },
         "required": [
+          "review_policy",
           "kind",
           "processing",
           "quiz",
@@ -4285,6 +6093,15 @@
       "GenerateNotesRequest": {
         "additionalProperties": false,
         "properties": {
+          "review_policy": {
+            "default": "hard_only",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "type": "string"
+          },
           "kind": {
             "const": "generate_notes",
             "default": "generate_notes",
@@ -4292,9 +6109,30 @@
             "type": "string"
           },
           "transcript_snapshot_id": {
-            "format": "uuid",
-            "title": "Transcript Snapshot Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context Snapshot Id"
           },
           "output_language": {
             "default": "zh-CN",
@@ -4307,8 +6145,10 @@
           }
         },
         "required": [
+          "review_policy",
           "kind",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "output_language",
           "preferences"
         ],
@@ -4318,6 +6158,15 @@
       "GenerateQuizRequest": {
         "additionalProperties": false,
         "properties": {
+          "review_policy": {
+            "default": "hard_only",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "type": "string"
+          },
           "kind": {
             "const": "generate_quiz",
             "default": "generate_quiz",
@@ -4325,9 +6174,30 @@
             "type": "string"
           },
           "transcript_snapshot_id": {
-            "format": "uuid",
-            "title": "Transcript Snapshot Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context Snapshot Id"
           },
           "notes_revision_id": {
             "anyOf": [
@@ -4347,8 +6217,10 @@
           }
         },
         "required": [
+          "review_policy",
           "kind",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "notes_revision_id",
           "options"
         ],
@@ -4358,6 +6230,15 @@
       "ChatReplyRequest": {
         "additionalProperties": false,
         "properties": {
+          "scope": {
+            "default": "selected_chapters",
+            "enum": [
+              "selected_chapters",
+              "course_retrieval"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
           "kind": {
             "const": "chat_reply",
             "default": "chat_reply",
@@ -4394,6 +6275,7 @@
           }
         },
         "required": [
+          "scope",
           "kind",
           "conversation_id",
           "notes_revision_id",
@@ -4406,6 +6288,15 @@
       "ReviseNotesRequest": {
         "additionalProperties": false,
         "properties": {
+          "review_policy": {
+            "default": "hard_only",
+            "enum": [
+              "hard_only",
+              "semantic"
+            ],
+            "title": "Review Policy",
+            "type": "string"
+          },
           "kind": {
             "const": "revise_notes",
             "default": "revise_notes",
@@ -4413,9 +6304,30 @@
             "type": "string"
           },
           "transcript_snapshot_id": {
-            "format": "uuid",
-            "title": "Transcript Snapshot Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transcript Snapshot Id"
+          },
+          "context_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context Snapshot Id"
           },
           "base_revision_id": {
             "format": "uuid",
@@ -4444,8 +6356,10 @@
           }
         },
         "required": [
+          "review_policy",
           "kind",
           "transcript_snapshot_id",
+          "context_snapshot_id",
           "base_revision_id",
           "chapter_ids",
           "preferences",
@@ -4505,6 +6419,224 @@
           "created_at"
         ],
         "title": "TranscriptSnapshot",
+        "type": "object"
+      },
+      "EventOperationState": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "event_revision": {
+            "title": "Event Revision",
+            "type": "integer"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Code"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "kind",
+          "status",
+          "attempt",
+          "event_revision",
+          "error_code"
+        ],
+        "title": "EventOperationState",
+        "type": "object"
+      },
+      "EventSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "minimum": 0,
+            "title": "Cursor",
+            "type": "integer"
+          },
+          "retention_floor": {
+            "minimum": 0,
+            "title": "Retention Floor",
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/CourseStudyState"
+          },
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/EventOperationState"
+            },
+            "title": "Operations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cursor",
+          "retention_floor",
+          "state",
+          "operations"
+        ],
+        "title": "EventSnapshot",
+        "type": "object"
+      },
+      "OperationEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "minimum": 1,
+            "title": "Event Id",
+            "type": "integer"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "operation_id": {
+            "format": "uuid",
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "attempt": {
+            "minimum": 1,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "state_revision": {
+            "minimum": 0,
+            "title": "State Revision",
+            "type": "integer"
+          },
+          "stage": {
+            "pattern": "^[a-z_]{1,40}$",
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "stage_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "running",
+                  "succeeded",
+                  "failed",
+                  "skipped"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stage Status"
+          },
+          "completed_units": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Completed Units"
+          },
+          "total_units": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total Units"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Code"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "task_id",
+          "operation_id",
+          "attempt",
+          "state_revision",
+          "stage",
+          "status",
+          "stage_status",
+          "completed_units",
+          "total_units",
+          "error_code",
+          "occurred_at"
+        ],
+        "title": "OperationEvent",
         "type": "object"
       },
       "ChunkPart": {
@@ -4688,7 +6820,8 @@
               "audio",
               "transcript",
               "notes",
-              "quiz"
+              "quiz",
+              "context"
             ],
             "title": "Kind",
             "type": "string"
@@ -4748,7 +6881,8 @@
               "audio",
               "transcript",
               "notes",
-              "quiz"
+              "quiz",
+              "context"
             ],
             "title": "Kind",
             "type": "string"
@@ -4800,7 +6934,8 @@
               "extract_audio",
               "transcribe_audio",
               "generate_notes",
-              "generate_quiz"
+              "generate_quiz",
+              "prepare_video_context"
             ],
             "title": "Tool Name",
             "type": "string"

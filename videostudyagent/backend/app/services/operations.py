@@ -40,7 +40,7 @@ def ensure_study_schema(settings, engine):
         raise StudyError(
             "MIGRATION_REQUIRED", "现有课程库需要先备份升级，请停止服务后运行迁移命令。", 409
         )
-    upgraded = initialize_database(settings.data_dir / "app.db", revision="0003_study_foundation")
+    upgraded = initialize_database(settings.data_dir / "app.db", revision="0007_operation_events")
     upgraded.dispose()
 
 
@@ -48,8 +48,11 @@ def enqueue_initial(task, settings, engine):
     return StudyRepository(engine).enqueue(
         task.id,
         InitialStudyRequest(
+            review_policy=task.options.review_policy,
             processing=ProcessingOptions(
-                generate_notes=task.options.generate_notes, generate_quiz=task.options.generate_quiz
+                enable_ocr=task.options.enable_ocr,
+                generate_notes=task.options.generate_notes,
+                generate_quiz=task.options.generate_quiz,
             ),
             quiz=QuizGenerationOptions(
                 difficulty=task.options.difficulty, output_language=task.options.output_language
@@ -134,6 +137,9 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
     request = operation.request
     frozen_state = repo.state(task.id)
     try:
+        from app.services.review_setup import require_review_schema
+
+        require_review_schema(repository.engine)
         # A process can stop after persisting its output but before recording success.
         # Reuse that immutable output rather than invoking the model again.
         if request.kind == "generate_quiz":
@@ -229,6 +235,13 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
                 )
 
             bounded.on_usage = record
+        if getattr(request, "context_snapshot_id", None) or (
+            request.kind == "initial_study" and request.processing.enable_ocr
+        ):
+            from app.services.context_operations import run_context_operation
+
+            await run_context_operation(operation, settings, repository, bounded, asr)
+            return
         if request.kind == "revise_notes":
             from app.services.note_revisions import revise_notes
 
@@ -285,6 +298,7 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
             if getattr(request, "preferences", None)
             else {}
         )
+        context.operation_id = operation.id
         context.quiz_nonce = str(operation.id)
         reader = VersionReader(settings.data_dir)
         context.previous_questions = [
@@ -306,6 +320,9 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
                 created_at=source_artifact.created_at,
             )
         )
+        from app.services.indexing import index_source
+
+        index_source(repository, settings.data_dir, task.id, source.id, "transcript")
         state = frozen_state
         if state.transcript_snapshot_id is None:
             state = repo.set_source(task.id, source.id, expected_revision=state.revision)
@@ -316,6 +333,19 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
         batch_id = None
         if task.options.generate_notes:
             document = tools.store.read_json(artifacts["notes"], NotesDocument)
+            from app.adapters.grounding import validate_notes
+            from app.services.generation import GenerationService
+            from app.services.review_runtime import review_candidate
+
+            transcript = reader.transcript(source)
+            document, approval = await review_candidate(
+                operation,
+                document,
+                transcript,
+                source.id,
+                GenerationService(settings, context, bounded),
+                lambda d: validate_notes(d, transcript),
+            )
             revision = repo.add_notes(
                 NotesRevision(
                     id=uuid4(),
@@ -325,6 +355,7 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
                     operation_id=operation.id,
                     created_at=now(),
                     document_schema_version="1.0",
+                    **approval,
                     preferences=request.preferences,
                     **writer.write(task.id, "notes", document),
                 )
@@ -338,6 +369,20 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
             document = QuizDocumentV11.model_validate(
                 document.model_dump() | {"schema_version": "1.1"}
             )
+            from app.adapters.grounding import validate_quiz
+            from app.services.generation import GenerationService
+            from app.services.review_runtime import review_candidate
+
+            transcript = reader.transcript(source)
+            basis = reader.notes(repo.notes(task.id, note_id)) if note_id else None
+            document, approval = await review_candidate(
+                operation,
+                document,
+                transcript,
+                source.id,
+                GenerationService(settings, context, bounded),
+                lambda d: validate_quiz(d, transcript, basis, task.options),
+            )
             old_batches = repo.quiz_batches(task.id, limit=100)
             batch = repo.add_batch(
                 QuizBatch(
@@ -348,6 +393,7 @@ async def run_operation(operation, settings, repository, llm=None, asr=None):
                     operation_id=operation.id,
                     sequence=max([b.sequence for b in old_batches] or [0]) + 1,
                     nonce=operation.id,
+                    **approval,
                     difficulty=task.options.difficulty,
                     created_at=now(),
                     **writer.write(task.id, "quiz", document),

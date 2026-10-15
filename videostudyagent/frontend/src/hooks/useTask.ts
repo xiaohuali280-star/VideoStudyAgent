@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError, friendlyError, getResult, getTask } from "../api/client";
 import type { StudyResult, TaskDetail } from "../api/client";
 
@@ -7,8 +7,9 @@ export function useTask(id: string | null, revision: number) {
   const [result, setResult] = useState<StudyResult | null>(null);
   const [error, setError] = useState("");
   const [corrupt, setCorrupt] = useState(false);
+  const previousId = useRef<string | null>(null);
   useEffect(() => {
-    setDetail(null); setResult(null); setError(""); setCorrupt(false);
+    if (previousId.current !== id) { setDetail(null); setResult(null); setError(""); setCorrupt(false); previousId.current = id; }
     if (!id) return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined, failures = 0;
